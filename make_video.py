@@ -360,15 +360,16 @@ def make_edit(version, formats=("16x9", "9x16")):
     clip_len = {sid: edit.duration(CLIPS / f"{sid}_t{picks[sid]}.mp4") for sid in SHOTS}
     cuts = edit.plan_cuts(info, clip_len)
     edit.BUILD.mkdir(exist_ok=True)
+    score = edit.prepare_score(music, info, edit.BUILD / f"score_{version}_prepared.wav")
     (edit.BUILD / "timeline.json").write_text(json.dumps({"music": music.name, "picks": picks, "tempo": info["tempo"],
                                                           "bell": info["bell"], "cuts": cuts}, indent=1))
-    print(f"tempo {info['tempo']:.1f} bpm, bell at {info['bell']:.2f}s, card at {cuts[-1]['end']:.2f}s")
+    print(f"tempo {info['tempo']:.1f} bpm, bell/hit at {info['bell']:.2f}s, card at {cuts[-1]['end']:.2f}s")
     for c in cuts:
         print(f"  {c['id']}  {c['start']:6.2f} -> {c['end']:6.2f}  ({c['end'] - c['start']:.2f}s)"
               f"{'  dissolve' if c['dissolve_out'] else ''}")
     for fmt in formats:
         out = ROOT / f"shiv_parvati_{fmt}.mp4"
-        edit.render(cuts, picks, music, info, fmt == "9x16", out)
+        edit.render(cuts, picks, score, info, fmt == "9x16", out)
         lufs, tp = edit.loudness(out)
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
 
