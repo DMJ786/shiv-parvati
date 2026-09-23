@@ -131,3 +131,28 @@ SHOTS = {
            "Slow push-in.",
            "soft wind, distant temple bell resonance"),
 }
+
+# Score: ~57 s, one continuous instrumental with wordless choir. (name, seconds, styles)
+# 15 shots of at most 4 s fill ~50 s of picture, so the score is 57 s: the end card rides the bansuri resolve.
+# The bell ends the near-silent section so the hard cut into shot 13 (Shiva's eyes open) starts the climax.
+MUSIC_GLOBAL = ["epic Indian mythological film score", "orchestral devotional", "cinematic trailer",
+                "instrumental", "wordless choir only", "D minor, raga Shivaranjani colour", "85 bpm"]
+MUSIC_NEGATIVE = ["lyrics", "sung words", "spoken word", "rap", "pop", "EDM drop", "electric guitar", "vocal solo"]
+MUSIC_SECTIONS = [
+    ("Himalaya", 9, ["tanpura drone", "solo bansuri flute melody", "cold, vast, sparse", "wind texture", "no drums"]),
+    ("Tapasya build", 14, ["dhol and taiko drums pulse building steadily", "low cellos and basses ostinato",
+                           "conch shell swell", "rising tension", "crescendo"]),
+    ("Rishis ascend", 12, ["deep wordless male choir chant 'aaah' and 'om'", "driving dhol and taiko percussion",
+                           "low brass", "powerful and relentless"]),
+    ("Eyes open", 4, ["sudden near silence", "slow heartbeat thumps", "ends with one resonant temple bell strike",
+                      "no drums, no choir"]),
+    ("Climax", 12, ["full climax erupting on the temple bell ring-out", "massive wordless choir",
+                    "french horns and trombones", "thundering dhol", "soaring strings", "triumphant and divine"]),
+    ("Resolve", 6, ["soft resolve", "solo bansuri over tanpura drone", "gentle, peaceful, fading out"]),
+]
+# Flavour per version, added to the global styles.
+MUSIC_VERSIONS = {
+    "A": ["balanced orchestral-devotional, grand and emotional"],
+    "B": ["darker and more percussive, heavy taiko, gritty low brass, huge trailer impacts"],
+    "C": ["warmer and more spiritual, raga-led melody, sitar and santoor colours, lush strings"],
+}
