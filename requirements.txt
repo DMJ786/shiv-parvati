@@ -1,0 +1,9 @@
+fal-client
+pillow
+numpy
+opencv-python-headless
+insightface
+onnxruntime
+librosa
+soundfile
+pyloudnorm
