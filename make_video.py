@@ -6,6 +6,7 @@ Shiv & Parvati — ~55 s cinematic AI film, built in stages on fal.ai.
   python make_video.py heroes       Shiva + sages reference images -> heroes/
   python make_video.py keyframes    one 16:9 still per shot (Nano Banana Pro), face-scored -> keyframes/
   python make_video.py grid         contact sheet of all keyframes -> keyframes/grid.jpg
+  python make_video.py video --shots 01 --takes 1   animate keyframes (Kling v3 Pro) -> clips/NN_tK.mp4
 
 Every stage is resumable: finished files are skipped. Delete a file (or pass --redo 03,07) to regenerate it.
 Setup: pip install -r requirements.txt, ffmpeg on PATH, export FAL_KEY=...
@@ -25,6 +26,7 @@ from film.shots import HEROES, PARVATI_LOCK, SHOTS, STYLE
 ROOT = Path(__file__).resolve().parent
 SHEET = ROOT / "parvati_sheet.png"
 REFS, HERO_DIR, KF = ROOT / "refs", ROOT / "heroes", ROOT / "keyframes"
+CLIPS = ROOT / "clips"
 
 IMAGE_MODEL = os.getenv("IMAGE_MODEL", "fal-ai/nano-banana-pro/edit")
 IMAGE_T2I = os.getenv("IMAGE_T2I", "fal-ai/nano-banana-pro")
@@ -33,6 +35,12 @@ IMAGE_T2I = os.getenv("IMAGE_T2I", "fal-ai/nano-banana-pro")
 FACE_MIN = 0.45
 FACE_TRIES = 4
 FACE_SHIVA = ("11", "12", "13")   # Shiva shots where his face is readable
+
+VIDEO_MODEL = os.getenv("VIDEO_MODEL", "fal-ai/kling-video/v3/pro/image-to-video")
+CLIP_SECONDS = os.getenv("CLIP_SECONDS", "6")
+VIDEO_LOOK = ("Cinematic, photoreal, smooth natural motion, epic Indian mythological film. Keep every character's face, "
+              "costume and the lighting exactly as in the start frame.")
+VIDEO_NEG = "blur, distortion, morphing face, extra limbs, flicker, text, subtitles, watermark, low quality"
 
 # Crops of parvati_sheet.png (1122x1402), clear of the sheet's captions and calligraphy.
 CROPS = {
@@ -209,10 +217,72 @@ def _has_font():
         return False
 
 
+# ---------------------------------------------------------------- video
+def video_prompt(sid):
+    _, _, action, sound = SHOTS[sid]
+    who = "@Element1 " if "parvati" in SHOTS[sid][0] else ""
+    return f"{who}{action} {VIDEO_LOOK} Audio: {sound}; ambience and sound effects only — no music, no speech."
+
+
+def make_clip(sid, take):
+    dst = CLIPS / f"{sid}_t{take}.mp4"
+    if dst.exists():
+        return dst
+    start = CLIPS / f"{sid}_start.jpg"
+    if not start.exists():
+        Image.open(KF / f"{sid}.png").convert("RGB").resize((1920, 1080), Image.LANCZOS).save(start, quality=95)
+    args = {"start_image_url": upload(start), "prompt": video_prompt(sid), "duration": CLIP_SECONDS,
+            "generate_audio": True, "negative_prompt": VIDEO_NEG}
+    if "parvati" in SHOTS[sid][0]:
+        # Kling element = identity lock: frontal portrait plus up to three other angles.
+        args["elements"] = [{"frontal_image_url": upload(REFS / "p01.png"),
+                             "reference_image_urls": [upload(REFS / f"{n}.png") for n in ("p03", "p04", "p06")]}]
+    print(f"[{sid} take {take}] {VIDEO_MODEL} {CLIP_SECONDS}s")
+    res = fal().subscribe(VIDEO_MODEL, arguments=args)
+    download(res["video"]["url"], dst)
+    print("  ->", dst)
+    return dst
+
+
+def clip_frames(clip, dst, n=5):
+    """Contact strip of n frames spread across a clip."""
+    import subprocess
+    dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                str(clip)], capture_output=True, text=True, check=True).stdout)
+    tiles = []
+    for i in range(n):
+        t = dur * (i + 0.5) / n
+        png = dst.with_suffix(f".{i}.png")
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t:.2f}", "-i", str(clip), "-frames:v", "1",
+                        "-vf", "scale=640:-2", str(png)], check=True)
+        tiles.append((Image.open(png).convert("RGB"), t))
+        png.unlink()
+    w, h = tiles[0][0].size
+    strip = Image.new("RGB", (n * (w + 8) + 8, h + 16), (16, 16, 16))
+    d = ImageDraw.Draw(strip)
+    font = ImageFont.truetype("DejaVuSans-Bold.ttf", 20) if _has_font() else ImageFont.load_default()
+    for i, (im, t) in enumerate(tiles):
+        strip.paste(im, (8 + i * (w + 8), 8))
+        d.text((16 + i * (w + 8), 14), f"{clip.stem}  {t:.1f}s", fill=(255, 220, 140), font=font)
+    strip.save(dst, quality=88)
+    return dst
+
+
+def make_video(shots, takes):
+    CLIPS.mkdir(exist_ok=True)
+    jobs = [(s, t) for s in shots for t in range(1, takes + 1)]
+    with cf.ThreadPoolExecutor(4) as ex:
+        clips = list(ex.map(lambda j: make_clip(*j), jobs))
+    for c in clips:
+        print("frames ->", clip_frames(c, CLIPS / f"{c.stem}_frames.jpg"))
+
+
 # ---------------------------------------------------------------- cli
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=["crops", "heroes", "keyframes", "grid"])
+    ap.add_argument("stage", choices=["crops", "heroes", "keyframes", "grid", "video"])
+    ap.add_argument("--shots", default=",".join(SHOTS), help="comma-separated shot ids")
+    ap.add_argument("--takes", type=int, default=1)
     ap.add_argument("--redo", default="", help="comma-separated ids to regenerate, e.g. 03,07 or shiva")
     a = ap.parse_args()
     redo = tuple(x for x in a.redo.split(",") if x)
@@ -227,6 +297,8 @@ def main():
         make_keyframes(redo)
     elif a.stage == "grid":
         make_grid()
+    elif a.stage == "video":
+        make_video([x for x in a.shots.split(",") if x], a.takes)
 
 
 if __name__ == "__main__":
