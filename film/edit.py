@@ -45,19 +45,89 @@ def fr(t):
 
 # ---------------------------------------------------------------- beats
 def analyse(music):
+    """Beats, section marks and the hit: the moment the climax lands after the near-silent section, where the
+    bell strikes and the edit hard-cuts into shot 13."""
     import librosa
     y, sr = librosa.load(str(music), sr=22050, mono=True)
     tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="time")
-    marks = np.cumsum([0] + [s for _, s, _ in MUSIC_SECTIONS]) * (len(y) / sr) / sum(s for _, s, _ in MUSIC_SECTIONS)
-    # Bell: strongest high-frequency onset inside the near-silent section (the heartbeat is low, the bell bright).
-    hp = librosa.effects.preemphasis(y, coef=0.97)
-    env = librosa.onset.onset_strength(y=hp, sr=sr, fmin=800, fmax=8000, n_mels=64)
-    times = librosa.times_like(env, sr=sr)
-    lo, hi = marks[3] - 1.0, marks[4] + 1.0
-    win = (times >= lo) & (times <= hi)
-    bell = float(times[win][np.argmax(env[win])])
+    total = sum(s for _, s, _ in MUSIC_SECTIONS)
+    marks = np.cumsum([0] + [s for _, s, _ in MUSIC_SECTIONS]) * (len(y) / sr) / total
+    hop = int(0.05 * sr)
+    rms = librosa.feature.rms(y=y, frame_length=hop * 2, hop_length=hop)[0]
+    db = 20 * np.log10(rms + 1e-9)
+    times = librosa.times_like(rms, sr=sr, hop_length=hop)
+    loud = np.median(db[(times >= marks[2]) & (times < marks[3])])       # choir section level
+    win = (times >= marks[3]) & (times <= marks[4] + 2.0)
+    quiet = times[win][np.argmin(db[win])]
+    silent = db[win].min() < loud - 20
+    onsets = librosa.onset.onset_detect(y=y, sr=sr, units="time", backtrack=True)
+    if silent:
+        # The track really goes quiet: the hit is the first return to near choir level after the quietest point.
+        after = (times > quiet) & (db > loud - 8)
+        hit = float(times[after][0]) if after.any() else float(marks[4])
+    else:
+        hit = float(marks[4])
+    near = [o for o in onsets if abs(o - hit) <= 0.5]
+    if near:
+        hit = float(min(near, key=lambda o: abs(o - hit)))
     return {"tempo": float(np.atleast_1d(tempo)[0]), "beats": [float(b) for b in beats], "sections": marks.tolist(),
-            "bell": bell, "length": len(y) / sr}
+            "bell": hit, "silent": bool(silent), "length": len(y) / sr}
+
+
+# ---------------------------------------------------------------- the "eyes open" moment
+BELL_SFX = MUSIC / "sfx" / "bell_1.mp3"
+
+
+def heartbeat(sr, t0, n=2, gap=1.55):
+    """Synthesised 'lub-dub' heartbeats: pitched-down sub thumps with a soft transient."""
+    out = []
+    for k in range(n):
+        for off, amp in ((0.0, 1.0), (0.26, 0.7)):
+            t = np.arange(int(0.45 * sr)) / sr
+            f = 38 + 55 * np.exp(-t * 22)
+            body = np.sin(2 * np.pi * np.cumsum(f) / sr) * np.exp(-t * 9)
+            click = np.random.default_rng(k).standard_normal(len(t)) * np.exp(-t * 90) * 0.08
+            out.append((t0 + k * gap + off, amp * (body + click)))
+    return out
+
+
+def prepare_score(music, info, dst):
+    """Music bus: the score dipped to near-silence before the hit (if the track does not already do it),
+    two heartbeats in the silence and one temple bell exactly on the hit."""
+    import librosa
+    import soundfile as sf
+    sr = 48000
+    y, _ = librosa.load(str(music), sr=sr, mono=False)
+    y = np.atleast_2d(y)
+    if y.shape[0] == 1:
+        y = np.vstack([y, y])
+    n = y.shape[1]
+    t = np.arange(n) / sr
+    hit, s3 = info["bell"], info["sections"][3]
+    gain = np.ones(n)
+    if not info["silent"]:
+        floor = 10 ** (-34 / 20)
+        fade_end = min(s3 + 0.9, hit - 0.3)
+        seg = (t >= s3) & (t < fade_end)
+        gain[seg] = np.cos(np.linspace(0, np.pi / 2, seg.sum())) * (1 - floor) + floor
+        gain[(t >= fade_end) & (t < hit)] = floor
+    y = y * gain
+    loud = np.sqrt(np.mean(y[:, int(info["sections"][2] * sr):int(info["sections"][3] * sr)] ** 2))
+    for start, sig in heartbeat(sr, hit - 3.1):
+        i = int(start * sr)
+        y[:, i:i + len(sig)] += sig * loud * 2.2
+    bell, _ = librosa.load(str(BELL_SFX), sr=sr, mono=True)
+    on = librosa.onset.onset_detect(y=bell, sr=sr, units="samples", backtrack=True)
+    bell = bell[(on[0] if len(on) else 0):]
+    bell = bell / (np.sqrt(np.mean(bell[: sr // 2] ** 2)) + 1e-9) * loud * 1.1
+    i = int(hit * sr)
+    m = min(len(bell), n - i)
+    y[:, i:i + m] += bell[:m]
+    peak = np.abs(y).max()
+    if peak > 0.98:
+        y *= 0.98 / peak
+    sf.write(dst, y.T, sr, subtype="PCM_24")
+    return dst
 
 
 # ---------------------------------------------------------------- cut plan
