@@ -1,0 +1,18 @@
+*.npy
+!logo_alpha.npy
+seg.tflite
+frames/
+cut_*/
+seq_*/
+led/
+r/
+veo/
+*.wav
+trailer_video.mp4
+__pycache__/
+# personal media: kept out of this public repo
+source/
+output/
+reference_face_*.jpg
+sil/
+family_sil.png
