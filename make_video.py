@@ -9,6 +9,7 @@ Shiv & Parvati — ~55 s cinematic AI film, built in stages on fal.ai.
   python make_video.py video --shots 01 --takes 1   animate keyframes (Kling v3 Pro) -> clips/NN_tK.mp4
   python make_video.py music        2-3 versions of the ~60 s score (Eleven Music) -> music/
   python make_video.py edit --music A   beat-cut, grade, end card, mix, master -> shiv_parvati_16x9.mp4 / _9x16.mp4
+  python make_video.py reel         "rotate your phone" Reel (hook + prompt + rotated film) -> shiv_parvati_reel.mp4
 
 Every stage is resumable: finished files are skipped. Delete a file (or pass --redo 03,07) to regenerate it.
 Setup: pip install -r requirements.txt, ffmpeg on PATH, export FAL_KEY=...
@@ -378,7 +379,7 @@ def make_edit(version, formats=("16x9", "9x16")):
 def main():
     global CLIP_SECONDS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=["crops", "heroes", "keyframes", "grid", "video", "music", "edit"])
+    ap.add_argument("stage", choices=["crops", "heroes", "keyframes", "grid", "video", "music", "edit", "reel"])
     ap.add_argument("--shots", default=",".join(SHOTS), help="comma-separated shot ids")
     ap.add_argument("--takes", type=int, default=1)
     ap.add_argument("--versions", default="A,B,C", help="music versions to make")
@@ -406,6 +407,11 @@ def main():
         make_music([x for x in a.versions.split(",") if x])
     elif a.stage == "edit":
         make_edit(a.music, tuple(a.formats.split(",")))
+    elif a.stage == "reel":
+        from film import edit, reel
+        out = reel.render(ROOT / "shiv_parvati_reel.mp4")
+        lufs, tp = edit.loudness(out)
+        print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
 
 
 if __name__ == "__main__":

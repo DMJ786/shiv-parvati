@@ -5,6 +5,10 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
 **Deliverables**
 - `shiv_parvati_16x9.mp4` — 1080p 16:9 master
 - `shiv_parvati_9x16.mp4` — 1080×1920 Reels version, reframed on the subject
+- `shiv_parvati_reel.mp4` — 62 s "rotate your phone" Reel: 2.6 s hook (Shiva's eyes on the bell + caption),
+  animated rotate prompt, then the full film turned 90° with push-ins, impact zooms, beat pulses,
+  punch-in close-ups and a flash + shake on the bell (`python make_video.py reel`, `film/reel.py`)
+- `shiv_parvati_reel_cover.jpg` — 1080×1920 cover image for the Reel
 
 ## Pipeline
 
