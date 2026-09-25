@@ -9,3 +9,4 @@ build/
 *.part
 __pycache__/
 .env
+sati/
