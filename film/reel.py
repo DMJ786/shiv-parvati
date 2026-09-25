@@ -20,6 +20,7 @@ SR = 48000
 BOLD = ROOT / "assets" / "fonts" / "Montserrat-800.ttf"
 SEMI = ROOT / "assets" / "fonts" / "Montserrat-600.ttf"
 
+HOOK = False                          # optional vertical hook before the rotate prompt (off: the Reel opens on it)
 HOOK_START, HOOK_LEN = None, 2.6      # hook = the bell + Shiva's eyes opening (start filled from the timeline)
 ROTATE_LEN = 2.4
 HOOK_LINES = ["After spending hours", "I made this with AI"]
@@ -41,7 +42,7 @@ TREATMENT = {
     "11": {"push": 0.08, "punch": 0.12, "shake": 5},
     "12": {"push": 0.05, "punch": 0.08, "jump": (1.4, "eyes")},
     "13": {"push": 0.08, "punch": 0.20, "flash": True, "shake": 14},
-    "14": {"push": 0.06, "jump": (1.45, "eyes")},
+    "14": {"push": 0.05},              # after the eyes open: slow push-ins only, nothing on the beat
     "15": {"push": -0.08},            # slow pull-back reveal
 }
 FALLBACK_CENTRE = {"01": (0.5, 0.5), "09": (0.52, 0.45), "10": (0.61, 0.45), "11": (0.5, 0.45), "15": (0.5, 0.5)}
@@ -126,12 +127,9 @@ def camera(cuts, beats, bell, pts):
                 w = ease((i - lo) / (hi - lo))
                 for arr in (z, cx, cy):
                     arr[i] = arr[lo - 1] * (1 - w) + arr[hi] * w
-    # Beat pulses: every beat in the climax, every other beat under the choir.
-    sec = [c["start"] for c in cuts]
+    # Beat pulses under the choir only. Once Shiva's eyes open the ending stays calm and emotional.
     for j, bt in enumerate(beats):
-        if bell + 0.3 <= bt < cuts[-1]["end"] - 0.3:
-            amp = 0.035
-        elif cuts[7]["start"] <= bt < cuts[11]["start"] and j % 2 == 0:
+        if cuts[7]["start"] <= bt < cuts[11]["start"] and j % 2 == 0:
             amp = 0.022
         else:
             continue
@@ -279,8 +277,8 @@ def render(out):
         p.stdout.close()
         p.wait()
 
-    # 1) Hook: Shiva's eyes open on the bell, vertical crop around his face, captions popping in.
-    hook_n = round(HOOK_LEN * FPS)
+    # 1) Optional hook: Shiva's eyes open on the bell, vertical crop around his face, captions popping in.
+    hook_n = round(HOOK_LEN * FPS) if HOOK else 0
     hook_t0 = cuts[12]["start"]
     size = 80
     while True:
@@ -290,7 +288,7 @@ def render(out):
         size -= 2
     caption = text_layer(HOOK_LINES, [big, big], 330)
     fx, fy = pts["13"]["centre"]
-    for i, fr in enumerate(reader(hook_t0, hook_n)):
+    for i, fr in enumerate(reader(hook_t0, hook_n) if HOOK else []):
         zz = 1.0 + 0.10 * ease(i / hook_n) + (0.12 * (1 - ease(i / 6)) if i < 6 else 0)
         vw = FH * RW / RH                                 # 9:16 window inside the 16:9 frame
         crop_w = vw / zz
@@ -324,10 +322,12 @@ def render(out):
     enc.wait()
 
     # Audio: bell + climax under the hook, whoosh through the rotate prompt, then the film's own mix.
-    hook_a = load_audio(src, hook_t0, HOOK_LEN)
-    fade = np.ones(len(hook_a))
-    fade[-int(0.35 * SR):] = np.linspace(1, 0.15, int(0.35 * SR))
-    hook_a *= fade[:, None]
+    hook_a = np.zeros((0, 2), np.float32)
+    if HOOK:
+        hook_a = load_audio(src, hook_t0, HOOK_LEN)
+        fade = np.ones(len(hook_a))
+        fade[-int(0.35 * SR):] = np.linspace(1, 0.15, int(0.35 * SR))
+        hook_a *= fade[:, None]
     rot_a = whoosh(ROTATE_LEN, peak_at=0.2 * ROTATE_LEN + 0.45 * ROTATE_LEN / 2)
     film_a = load_audio(src)
     mix = np.concatenate([hook_a, rot_a, film_a])

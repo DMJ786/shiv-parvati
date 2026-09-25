@@ -5,9 +5,9 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
 **Deliverables**
 - `shiv_parvati_16x9.mp4` — 1080p 16:9 master
 - `shiv_parvati_9x16.mp4` — 1080×1920 Reels version, reframed on the subject
-- `shiv_parvati_reel.mp4` — 62 s "rotate your phone" Reel: 2.6 s hook (Shiva's eyes on the bell + caption),
+- `shiv_parvati_reel.mp4` — 59 s "rotate your phone" Reel (no hook; `HOOK = True` in film/reel.py restores it):
   animated rotate prompt, then the full film turned 90° with push-ins, impact zooms, beat pulses,
-  punch-in close-ups and a flash + shake on the bell (`python make_video.py reel`, `film/reel.py`)
+  punch-in close-ups and a flash + shake on the bell; after the eyes open only slow push-ins (`python make_video.py reel`)
 - `shiv_parvati_reel_cover.jpg` — 1080×1920 cover image for the Reel
 - `shiv_parvati_sati_reel.mp4` — episode 2, "Sati to Parvati": a 45 s native 9:16 story reel (7 new vertical
   shots + 7 re-cropped from the first film), beat-cut, grief drop in the score, bell hard cut into Shiva's eyes
