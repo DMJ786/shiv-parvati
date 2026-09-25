@@ -18,7 +18,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 import make_video as mv
-from film.sati import NEW, STYLE, SATI_LOCK
+from film.sati import MUSIC_GLOBAL, MUSIC_NEGATIVE, NEW, SATI_LOCK, SECTIONS, STYLE
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "sati"
@@ -114,14 +114,73 @@ def grid(scores):
     print("grid ->", KF / "grid.jpg")
 
 
+def make_clip(sid):
+    dst = CLIPS / f"{sid}.mp4"
+    if dst.exists():
+        return dst
+    start = CLIPS / f"{sid}_start.jpg"
+    Image.open(KF / f"{sid}.png").convert("RGB").resize((1080, 1920), Image.LANCZOS).save(start, quality=95)
+    _, _, action, sound = NEW[sid]
+    lead = "@Element1 " if "parvati" in NEW[sid][0] else ""
+    args = {"start_image_url": mv.upload(start), "duration": "4", "generate_audio": True,
+            "negative_prompt": mv.VIDEO_NEG,
+            "prompt": f"{lead}{action} {mv.VIDEO_LOOK} Audio: {sound}; ambience and sound effects only — no music, "
+                      "no speech."}
+    if "parvati" in NEW[sid][0]:
+        args["elements"] = [{"frontal_image_url": mv.upload(mv.REFS / "p01.png"),
+                             "reference_image_urls": [mv.upload(mv.REFS / f"{n}.png") for n in ("p03", "p04", "p06")]}]
+    res = mv.fal().subscribe(mv.VIDEO_MODEL, arguments=args)
+    mv.download(res["video"]["url"], dst)
+    print("clip ->", dst)
+    return dst
+
+
+def make_video():
+    CLIPS.mkdir(parents=True, exist_ok=True)
+    with cf.ThreadPoolExecutor(7) as ex:
+        clips = list(ex.map(make_clip, NEW))
+    from film.face import score
+    sf = CLIPS / "scores.json"
+    scores = json.loads(sf.read_text()) if sf.exists() else {}
+    mv.CLIPS = CLIPS                                   # reuse the frame-strip and face helpers on this folder
+    for c in clips:
+        mv.clip_frames(c, CLIPS / f"{c.stem}_frames.jpg")
+        w = who(c.stem)
+        if w and c.stem not in scores:
+            scores[c.stem] = mv.clip_face_score(c, w)
+            print(f"  {c.stem} face {scores[c.stem]}")
+            sf.write_text(json.dumps(scores, indent=1, sort_keys=True))
+
+
+def make_music(name="score"):
+    MUSIC.mkdir(parents=True, exist_ok=True)
+    dst = MUSIC / f"{name}.mp3"
+    if not dst.exists():
+        plan = {"chunks": [{"text": "", "duration_ms": sec * 1000, "positive_styles": MUSIC_GLOBAL + styles,
+                            "negative_styles": MUSIC_NEGATIVE} for _, sec, styles, _ in SECTIONS]}
+        res = mv.fal().subscribe(mv.MUSIC_MODEL, arguments={"composition_plan": plan, "output_format": "mp3_48000_192"})
+        mv.download(res["audio"]["url"], dst)
+    print("music ->", dst)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=["keyframes", "grid"])
+    ap.add_argument("stage", choices=["keyframes", "grid", "video", "music", "edit"])
     ap.add_argument("--redo", default="")
+    ap.add_argument("--name", default="score", help="music file name (music stage)")
     a = ap.parse_args()
     redo = tuple(x for x in a.redo.split(",") if x)
     if a.stage == "keyframes":
         make_keyframes(redo)
+    elif a.stage == "video":
+        make_video()
+    elif a.stage == "music":
+        make_music(a.name)
+    elif a.stage == "edit":
+        from film import edit, sati_edit
+        out = sati_edit.render(MUSIC / f"{a.name}.mp3", ROOT / "shiv_parvati_sati_reel.mp4")
+        lufs, tp = edit.loudness(out)
+        print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
     else:
         sf = KF / "scores.json"
         grid(json.loads(sf.read_text()) if sf.exists() else {})

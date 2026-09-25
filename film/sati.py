@@ -68,17 +68,19 @@ REUSE = {
 
 # Story order, grouped by music section: (section name, seconds, styles, shots)
 SECTIONS = [
-    ("Yagna", 7, ["low tanpura drone", "mournful solo sarangi", "soft frame drum", "sorrowful, foreboding"],
-     ["s1", "s2"]),
-    ("Fury", 8, ["thunderous damru and dhol", "taiko hits", "brass stabs", "fierce deep wordless male choir chant",
-                 "furious, explosive"], ["s3", "r10", "s3b"]),
-    ("Grief", 5, ["sudden drop to near silence", "solo bansuri, lonely and cold", "wind"], ["s4", "r12a"]),
-    ("Rebirth", 11, ["hopeful rising strings", "tabla pulse building", "bansuri melody", "choir swell",
-                     "determined, devotional"], ["r01", "s5", "r04", "r06", "s6"]),
-    ("Eyes open", 4, ["near silence", "slow heartbeat thumps", "ends on one temple bell strike"], ["r14", "r12"]),
-    ("Union", 10, ["full climax erupting on the bell", "massive wordless choir", "soaring strings and horns",
-                   "then a gentle bansuri resolve fading out"], ["r13", "s7", "end"]),
+    ("Yagna", 7, ["slow ominous frame-drum pulse on every beat", "tanpura drone", "mournful solo sarangi",
+                  "sorrowful, foreboding, medium-quiet"], ["s1", "s2"]),
+    ("Fury", 8, ["explosive and loud", "full-power war drums, dhol and taiko on every beat", "brass hits",
+                 "fierce deep wordless male choir chant", "furious"], ["s3", "r10", "s3b"]),
+    ("Grief", 5, ["abrupt drop", "very quiet", "only a lonely solo bansuri and soft wind", "no drums"],
+     ["s4", "r12a"]),
+    ("Rebirth", 11, ["gradual build from quiet to strong", "tabla pulse", "rising strings", "hopeful bansuri melody",
+                     "crescendo", "devotional"], ["r01", "s5", "r04", "r06", "s6"]),
+    ("Eyes open", 4, ["near silence", "no drums", "held breath"], ["r14", "r12"]),
+    ("Union", 10, ["the loudest moment of the whole piece", "massive wordless choir and full orchestra",
+                   "huge drums", "triumphant and divine", "gentle bansuri resolve only in the last 3 seconds"],
+     ["r13", "s7", "end"]),
 ]
 MUSIC_GLOBAL = ["epic Indian mythological film score", "instrumental", "wordless choir only", "no lyrics",
-                "cinematic trailer", "92 bpm"]
+                "cinematic trailer", "92 bpm", "strong dynamic contrast between sections"]
 MUSIC_NEGATIVE = ["lyrics", "sung words", "spoken word", "rap", "pop", "EDM", "electric guitar"]

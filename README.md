@@ -9,6 +9,9 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
   animated rotate prompt, then the full film turned 90° with push-ins, impact zooms, beat pulses,
   punch-in close-ups and a flash + shake on the bell (`python make_video.py reel`, `film/reel.py`)
 - `shiv_parvati_reel_cover.jpg` — 1080×1920 cover image for the Reel
+- `shiv_parvati_sati_reel.mp4` — episode 2, "Sati to Parvati": a 45 s native 9:16 story reel (7 new vertical
+  shots + 7 re-cropped from the first film), beat-cut, grief drop in the score, bell hard cut into Shiva's eyes
+  (`python make_sati.py keyframes|video|music|edit`, `film/sati.py`, `film/sati_edit.py`)
 
 ## Pipeline
 
