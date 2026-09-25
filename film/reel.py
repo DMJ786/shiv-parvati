@@ -339,3 +339,45 @@ def render(out):
                     "-c:v", "copy", "-c:a", "pcm_s24le", "-shortest", str(premaster)], check=True)
     edit.master_audio(premaster, out)
     return out
+
+
+def render_vertical(out):
+    """Native 9:16 Reel: the face-tracked vertical cut (with its vertical end card) plus the same camera treatment
+    as the rotated Reel — push-ins, impact zooms, choir beat pulses, punch-in close-ups, flash + shake on the bell —
+    and a calm ending after Shiva's eyes open. No hook, no rotate prompt."""
+    tl = json.loads((BUILD / "timeline.json").read_text())
+    cuts, bell = tl["cuts"], tl["bell"]
+    src16 = BUILD / "shiv_parvati_16x9_premaster.mov"
+    src = BUILD / "shiv_parvati_9x16_premaster.mov"
+    info = edit.analyse(ROOT / "music" / tl["music"])
+    pts = subject_points(src16, cuts)            # vertical positions carry over: the 9:16 cut keeps full height
+    for p in pts.values():                       # the vertical cut is already centred on the subject horizontally
+        p["centre"] = (0.5, p["centre"][1])
+        p["eyes"] = (0.5, p["eyes"][1])
+    z, cx, cy, flash, shake = camera(cuts, info["beats"], bell, pts)
+    rng = np.random.default_rng(7)
+    n = round(edit.duration(src) * FPS)
+    video = BUILD / "vertical_video.mp4"
+    enc = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{RW}x{RH}",
+                            "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "14", "-preset", "medium",
+                            "-tune", "grain", "-pix_fmt", "yuv420p", str(video)], stdin=subprocess.PIPE)
+    p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(src), "-f", "rawvideo", "-pix_fmt", "bgr24", "-"],
+                         stdout=subprocess.PIPE)
+    for i in range(n):
+        buf = p.stdout.read(RW * RH * 3)
+        if len(buf) < RW * RH * 3:
+            break
+        fr = np.frombuffer(buf, np.uint8).reshape(RH, RW, 3)
+        frame = warp(fr, z[i], cx[i], cy[i], shake[i] * RW / FW, rng, out=(RW, RH))
+        if flash[i] > 0:
+            frame = cv2.addWeighted(frame, 1 - flash[i], np.full_like(frame, 255), flash[i], 0)
+        enc.stdin.write(frame.tobytes())
+    p.stdout.close()
+    p.wait()
+    enc.stdin.close()
+    enc.wait()
+    premaster = BUILD / "vertical_premaster.mov"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(video), "-i", str(src), "-map", "0:v", "-map", "1:a",
+                    "-c:v", "copy", "-c:a", "pcm_s24le", "-shortest", str(premaster)], check=True)
+    edit.master_audio(premaster, out)
+    return out
