@@ -27,3 +27,17 @@ Useful flags: `--stages classify,plan` (re-plan only), `--stages edit,assemble`,
 If Gemini's safety filter refuses a chunk (`content_blocked`), the pipeline does **not** retry or
 try to work around it: that chunk keeps the original footage and the refusal is recorded in
 `work/qc/<chunk>.json`.
+
+## Local backend: FaceFusion (`ff_backend.py`)
+For footage Gemini refuses. Runs FaceFusion headless per shot: `inswapper_128` swap + GFPGAN at 35 % blend,
+`face_selector_mode=reference` locked on the pink-shirt man (his left→right face index on a reference frame
+is chosen by the vision model), box + occlusion masks so hands/coin in front of the face stay intact.
+Shots without his face are copied untouched; output is asserted frame-identical in length to the source.
+
+    git clone https://github.com/facefusion/facefusion work/facefusion
+    pip install -r work/facefusion/requirements.txt
+    python ff_backend.py --shots 0      # one-shot test -> output/ff_shot00_compare.mp4
+    python ff_backend.py                # whole movie  -> output/movie_facefusion.mp4
+
+Needs outbound access to github.com and huggingface.co (code + model downloads). CPU works but is slow;
+`--no-enhance` roughly halves the time.
