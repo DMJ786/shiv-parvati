@@ -1,0 +1,10 @@
+# Local face replacement - Python >= 3.9, plus ffmpeg/ffprobe on PATH
+insightface>=0.7.3
+onnxruntime>=1.17        # CPU / Apple Silicon (CoreML provider included on macOS)
+# onnxruntime-gpu>=1.17  # NVIDIA CUDA: install this INSTEAD of onnxruntime
+onnx
+opencv-python-headless>=4.8
+numpy
+scipy
+scikit-image
+scenedetect>=0.6.4
