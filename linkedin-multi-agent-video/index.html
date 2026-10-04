@@ -1,0 +1,659 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Multi-agent film</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root{
+    --bg:#090B10; --ink:#F4F6FB; --dim:#8D96AB; --line:#232838;
+    --cyan:#5CE1FF; --violet:#9B7BFF; --lime:#B6F36A; --amber:#FFB547; --pink:#FF6FA8;
+    --card:#11141C; --card2:#161A25;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1350px;overflow:hidden;background:var(--bg)}
+  body{font-family:'Inter',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  #stage{position:absolute;inset:0;width:1080px;height:1350px;overflow:hidden;background:var(--bg)}
+  .abs{position:absolute;left:0;top:0;will-change:transform,opacity,filter}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .grad{background:linear-gradient(92deg,var(--cyan),var(--violet) 55%,var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .grad2{background:linear-gradient(92deg,var(--lime),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* background */
+  #glowA,#glowB{width:900px;height:900px;border-radius:50%;filter:blur(120px);opacity:.33}
+  #glowA{background:radial-gradient(circle,var(--violet),transparent 65%)}
+  #glowB{background:radial-gradient(circle,#1F6BFF,transparent 65%)}
+  #grid{width:1240px;height:1510px;background-image:radial-gradient(rgba(255,255,255,.075) 1.6px,transparent 1.7px);background-size:40px 40px}
+
+  /* header + progress */
+  #hdr{left:64px;top:56px;width:952px;height:44px;display:flex;justify-content:space-between;align-items:center}
+  #hdr .l{font:600 22px 'JetBrains Mono';letter-spacing:.08em;color:var(--dim)}
+  #hdr .l b{color:var(--ink);font-weight:700}
+  .chip{display:inline-flex;align-items:center;gap:10px;border:1.5px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 18px;font:700 20px 'JetBrains Mono';letter-spacing:.1em}
+  #prog{left:0;top:1342px;height:8px;width:1080px;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));transform-origin:0 0}
+
+  /* titles */
+  .title{left:64px;top:150px;width:952px;font-weight:800;font-size:66px;line-height:1.08;letter-spacing:-.025em}
+  .title small{display:block;margin-top:16px;font-weight:500;font-size:34px;letter-spacing:-.01em;color:var(--dim);line-height:1.25}
+
+  /* hook */
+  #badge{left:64px;top:150px}
+  #badge .chip{font-size:24px;padding:12px 22px;border-color:rgba(92,225,255,.5);color:var(--cyan)}
+  #badge .dot{width:12px;height:12px;border-radius:50%;background:var(--lime);box-shadow:0 0 14px var(--lime)}
+  #hook{left:64px;top:300px;width:952px;font-weight:900;font-size:128px;line-height:1.0;letter-spacing:-.045em;transform-origin:30% 50%}
+  #hook div{will-change:transform,opacity,filter}
+  #hookSub{left:64px;top:735px;width:952px;font-weight:500;font-size:38px;color:var(--dim);line-height:1.3}
+  #hookTree{left:0;top:0;width:1080px;height:1350px}
+
+  /* single agent scene */
+  #solo{left:0;top:0;width:1080px;height:1350px}
+  #soloNode{left:90px;top:580px;width:280px;height:280px}
+  .bigNode{width:280px;height:280px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#2A3150,#141826 70%);border:2px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px}
+  .bigNode .t{font:700 34px 'JetBrains Mono'}
+  .bigNode .s{font:500 22px 'Inter';color:var(--dim)}
+  #soloRing{left:70px;top:560px;width:320px;height:320px}
+  #tasks{left:410px;top:440px;width:606px;background:var(--card);border:1.5px solid var(--line);border-radius:28px;padding:18px 0}
+  .task{height:96px;display:flex;align-items:center;gap:22px;padding:0 30px;font-size:37px;font-weight:600;color:var(--dim);position:relative}
+  .task .bx{width:34px;height:34px;border-radius:10px;border:2px solid #3A4155;flex:none;display:flex;align-items:center;justify-content:center}
+  .task .bx svg{opacity:0}
+  #taskHi{left:0;top:0;width:606px;height:96px;background:linear-gradient(90deg,rgba(92,225,255,.16),rgba(92,225,255,0));border-left:4px solid var(--cyan)}
+  #stepCtr{left:410px;top:1080px;width:606px;font:600 32px 'JetBrains Mono';color:var(--dim)}
+  #stepCtr b{color:var(--ink)}
+
+  /* code card */
+  #code{left:40px;top:440px;width:1000px;width:980px;background:var(--card);border:1.5px solid var(--line);border-radius:30px;overflow:hidden;transform-origin:50% 50%}
+  #code .bar{height:58px;display:flex;align-items:center;gap:12px;padding:0 26px;border-bottom:1.5px solid var(--line);background:var(--card2)}
+  #code .bar i{width:15px;height:15px;border-radius:50%;background:#2E3446}
+  #code .bar span{margin-left:14px;font:600 22px 'JetBrains Mono';color:var(--dim)}
+  #code pre{font:500 36px/1.62 'JetBrains Mono';padding:26px 34px 30px;white-space:pre;color:#C9D1E4}
+  #code .ln{display:block;position:relative}
+  .k{color:var(--violet)} .s{color:var(--lime)} .f{color:var(--cyan)} .c{color:#5B6478} .n{color:var(--amber)}
+  #hiLine{position:absolute;left:-34px;right:-34px;top:0;bottom:0;background:linear-gradient(90deg,rgba(182,243,106,.20),rgba(182,243,106,.04));border-left:5px solid var(--lime);z-index:-1;transform-origin:0 50%}
+  #caret{display:inline-block;width:3px;height:36px;background:var(--ink);vertical-align:-7px;margin-left:1px}
+  #callout{left:0;top:0}
+  #callout .chip{background:var(--lime);color:#0B0F06;border:none;font-size:26px;padding:14px 24px}
+  #fly{left:0;top:0;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#E9FFD0,var(--lime) 60%);box-shadow:0 0 40px rgba(182,243,106,.8)}
+
+  /* tree */
+  #treeSvg{left:0;top:0;width:1080px;height:1350px;overflow:visible}
+  .node{width:0;height:0}
+  .node .o{position:absolute;left:-38px;top:-38px;width:76px;height:76px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#2E3656,#151a29 72%);border:2.5px solid var(--c,var(--cyan));box-shadow:0 0 30px color-mix(in srgb,var(--c,var(--cyan)) 45%,transparent)}
+  .node .o .core{position:absolute;inset:22px;border-radius:50%;background:var(--c,var(--cyan))}
+  .node .lab{position:absolute;left:-250px;width:500px;top:52px;text-align:center;font:600 28px 'JetBrains Mono';color:var(--ink);white-space:nowrap}
+  .node .lab span{background:rgba(9,11,16,.9);padding:2px 12px;border-radius:10px}
+  .node .bar{position:absolute;left:-110px;top:98px;width:220px;height:12px;border-radius:6px;background:#202534;overflow:hidden}
+  .node .bar i{display:block;height:100%;width:100%;transform-origin:0 50%;background:linear-gradient(90deg,var(--c,var(--cyan)),#fff)}
+  .node .st{position:absolute;left:-150px;width:300px;top:118px;text-align:center;font:700 27px 'JetBrains Mono';color:var(--dim)}
+  .node .ring{position:absolute;left:-52px;top:-52px;width:104px;height:104px}
+  #root .o{left:-48px;top:-48px;width:96px;height:96px}
+  #root .o .core{inset:28px}
+  #root .lab{top:-24px;left:66px;width:auto;text-align:left;font-size:36px}
+  #root .ring{left:-64px;top:-64px;width:128px;height:128px}
+  #spawnChip{left:0;top:0}
+  .achip{background:rgba(155,123,255,.16);border:1.5px solid var(--violet);color:#D9CEFF;font:700 26px 'JetBrains Mono';padding:10px 20px;border-radius:14px;white-space:nowrap}
+  #conc{left:64px;top:1130px;width:952px;height:130px;background:var(--card);border:1.5px solid var(--line);border-radius:24px;display:flex;align-items:center;gap:26px;padding:0 34px}
+  #conc .v{font:700 34px 'JetBrains Mono'}
+  #conc .d{font:500 29px 'Inter';color:var(--dim);line-height:1.3}
+  #task2{left:0;top:0}
+  #task2 .achip{background:rgba(255,181,71,.16);border-color:var(--amber);color:#FFE2B5;font-size:22px}
+  #msgDot{left:0;top:0;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:var(--pink);box-shadow:0 0 22px var(--pink)}
+
+  /* actions band */
+  #band{left:64px;top:1112px;width:952px;height:170px;background:var(--card);border:1.5px solid var(--line);border-radius:26px;overflow:hidden}
+  #bandIn{left:0;top:0;width:952px}
+  .act{height:170px;display:flex;flex-direction:column;justify-content:center;padding:0 40px}
+  .act .a{font:700 46px 'JetBrains Mono';color:var(--ink)}
+  .act .a em{font-style:normal;color:var(--violet)}
+  .act .d{font:500 30px 'Inter';color:var(--dim);margin-top:6px}
+  #bandIdx{right:30px;top:22px;left:auto;font:600 22px 'JetBrains Mono';color:var(--dim)}
+
+  /* log */
+  #log{left:40px;top:440px;width:1000px;width:980px;background:var(--card);border:1.5px solid var(--line);border-radius:30px;overflow:hidden}
+  #log .bar{height:62px;display:flex;align-items:center;padding:0 30px;border-bottom:1.5px solid var(--line);background:var(--card2);font:600 24px 'JetBrains Mono';color:var(--dim)}
+  .row{height:146px;display:flex;align-items:center;gap:22px;padding:0 30px;border-bottom:1.5px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .ty{font:700 34px 'JetBrains Mono';white-space:nowrap}
+  .ag{font:500 27px 'JetBrains Mono';color:var(--dim);white-space:nowrap}
+  .meta{display:flex;flex-direction:column;gap:6px;flex:1}
+  .new{font:800 18px 'Inter';letter-spacing:.12em;color:#0B0F06;background:var(--lime);padding:6px 10px;border-radius:8px}
+  .rowFinal{background:linear-gradient(90deg,rgba(182,243,106,.14),transparent)}
+
+  /* answer / checklist card */
+  #ans{left:0;top:0;width:980px;height:640px;margin:-320px 0 0 -490px;background:var(--card);border:2px solid rgba(182,243,106,.55);border-radius:34px;overflow:hidden;box-shadow:0 30px 120px rgba(0,0,0,.6),0 0 80px rgba(182,243,106,.12)}
+  #ansA,#ansB{position:absolute;inset:0;padding:38px 44px}
+  .ah{white-space:nowrap;display:flex;align-items:center;gap:16px;font:700 31px 'JetBrains Mono';color:var(--lime)}
+  .ah .ph{color:var(--dim);font-weight:500}
+  .ar{white-space:nowrap;display:flex;align-items:center;gap:24px;font:600 42px 'Inter';margin-top:64px}
+  .ck{width:46px;height:46px;border-radius:50%;background:rgba(182,243,106,.16);border:2px solid var(--lime);display:flex;align-items:center;justify-content:center;flex:none}
+  .br{display:flex;gap:22px;margin-top:44px;align-items:flex-start}
+  .br .ix{font:800 30px 'JetBrains Mono';color:var(--cyan);width:44px;flex:none;line-height:1.3}
+  .br .tx{font:600 37px 'Inter';line-height:1.3}
+  .br .tx code{font:600 27px 'JetBrains Mono';color:var(--lime);display:block;margin-top:6px}
+
+  /* CTA */
+  #cta{left:64px;top:650px;width:952px}
+  #cta .big{font-weight:900;font-size:88px;line-height:1.02;letter-spacing:-.04em}
+  #cta .doc{margin-top:40px;font:600 30px 'JetBrains Mono';color:var(--dim)}
+  #cta .doc b{color:var(--ink)}
+  #ctaPill{left:64px;top:1150px}
+  #ctaPill .chip{background:var(--ink);color:var(--bg);border:none;font-size:28px;padding:18px 30px;letter-spacing:.02em;font-family:'Inter';font-weight:800}
+  #disc{left:64px;top:1262px;width:952px;font:500 24px 'Inter';color:#9098AC}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glowA" class="abs"></div>
+  <div id="glowB" class="abs"></div>
+  <div id="grid" class="abs"></div>
+
+  <!-- persistent header -->
+  <div id="hdr" class="abs"><div class="l"><b>RESPONSES API</b> / MULTI-AGENT</div><div class="chip" style="color:var(--amber);border-color:rgba(255,181,71,.5)">BETA</div></div>
+
+  <div id="cam" class="abs" style="width:1080px;height:1350px;transform-origin:540px 720px">
+  <!-- S1 hook -->
+  <svg id="hookTree" class="abs" viewBox="0 0 1080 1350"></svg>
+  <div id="badge" class="abs"><span class="chip"><span class="dot"></span>NEW · OPENAI RESPONSES API</span></div>
+  <div id="hook" class="abs">
+    <div id="h1">One request.</div>
+    <div id="h2" class="grad">A whole team</div>
+    <div id="h3" class="grad">of AI agents.</div>
+  </div>
+
+  <!-- S2 solo agent -->
+  <div id="solo" class="abs">
+    <svg id="soloRing" class="abs" viewBox="0 0 320 320"><circle cx="160" cy="160" r="152" fill="none" stroke="url(#rg)" stroke-width="5" stroke-linecap="round" stroke-dasharray="180 776"/><defs><linearGradient id="rg"><stop offset="0" stop-color="#5CE1FF"/><stop offset="1" stop-color="#9B7BFF"/></linearGradient></defs></svg>
+    <div id="soloNode" class="abs"><div class="bigNode"><div class="t" style="font-size:40px">agent</div></div></div>
+    <div id="tasks" class="abs"></div>
+    <div id="stepCtr" class="abs">step <b id="stepN">1</b> / 6 · sequential</div>
+  </div>
+
+  <!-- S3 code -->
+  <div id="code" class="abs">
+    <div class="bar"><i></i><i></i><i></i><span>multi_agent.py</span></div>
+<pre id="pre"><span class="ln"><span class="k">from</span> openai <span class="k">import</span> OpenAI</span><span class="ln">client = OpenAI()</span><span class="ln"> </span><span class="ln">resp = client.<span class="f">beta</span>.responses.create(</span><span class="ln">    model=<span class="s">"gpt-5.6"</span>,</span><span class="ln">    input=<span class="s">"Fix the flaky test suite"</span>,</span><span class="ln" id="L6"><span id="hiLine"></span><span id="typed"></span><span id="caret"></span></span><span class="ln">    betas=[<span class="s">"responses_multi_agent=v1"</span>],</span><span class="ln">)</span></pre>
+  </div>
+  <div id="callout" class="abs"><span class="chip">↑ one flag turns it on</span></div>
+
+  <!-- tree -->
+  <svg id="treeSvg" class="abs" viewBox="0 0 1080 1350">
+    <defs>
+      <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B6F36A"/><stop offset="1" stop-color="#5CE1FF"/></linearGradient>
+    </defs>
+    <g id="edges"></g>
+  </svg>
+  <div id="nodes" class="abs"></div>
+  <div id="spawnChip" class="abs"><span class="achip">spawn_agent</span></div>
+  <div id="task2" class="abs"><span class="achip">+ followup_task</span></div>
+  <div id="msgDot" class="abs"></div>
+  <div id="xMark" class="abs" style="opacity:0"><svg width="120" height="120" viewBox="0 0 120 120" style="position:absolute;left:-60px;top:-60px"><circle cx="60" cy="60" r="56" fill="rgba(255,95,95,.18)" stroke="#FF5F5F" stroke-width="4"/><path d="M40 40l40 40M80 40l-40 40" stroke="#FF5F5F" stroke-width="9" stroke-linecap="round"/></svg></div>
+  <div id="conc" class="abs">
+    <div><div class="v">max_concurrent_subagents <span style="color:var(--lime)">= 3</span></div>
+    <div class="d">Default. Extra subagents wait for a free slot.</div></div>
+  </div>
+
+  <!-- S6 actions band -->
+  <div id="band" class="abs"><div id="bandIn" class="abs"></div><div id="bandIdx" class="abs"></div></div>
+
+  <!-- S7 log -->
+  <div id="log" class="abs">
+    <div class="bar">response.output  ·  streamed</div>
+    <div class="row" data-i="0"><div class="meta"><div class="ty" style="color:var(--violet)">multi_agent_call</div><div class="ag">agent=/root · action=spawn_agent</div></div><span class="new">NEW</span></div>
+    <div class="row" data-i="1"><div class="meta"><div class="ty" style="color:var(--cyan)">multi_agent_call_output</div><div class="ag">agent=/root · result of the action</div></div><span class="new">NEW</span></div>
+    <div class="row" data-i="2"><div class="meta"><div class="ty" style="color:var(--pink)">agent_message</div><div class="ag">/root/coder → /root · <svg width="18" height="20" viewBox="0 0 18 20" style="vertical-align:-2px"><rect x="1" y="8" width="16" height="11" rx="3" fill="#8D96AB"/><path d="M4.5 8V6a4.5 4.5 0 0 1 9 0v2" stroke="#8D96AB" stroke-width="2.2" fill="none"/></svg> encrypted</div></div><span class="new">NEW</span></div>
+    <div class="row rowFinal" data-i="3"><div class="meta"><div class="ty" style="color:var(--lime)">message</div><div class="ag">agent=/root · phase="final_answer"</div></div></div>
+  </div>
+
+  <!-- S8/S9 answer card -->
+  <div id="ans" class="abs">
+    <div id="ansA">
+      <div class="ah">/root <span class="ph">· phase: "final_answer"</span></div>
+      <div class="ar" data-i="0"><span class="ck"><svg width="22" height="18" viewBox="0 0 22 18"><path d="M2 9l6 6L20 3" stroke="#B6F36A" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Root cause found <span style="color:var(--dim);font-weight:500">· researcher</span></div>
+      <div class="ar" data-i="1"><span class="ck"><svg width="22" height="18" viewBox="0 0 22 18"><path d="M2 9l6 6L20 3" stroke="#B6F36A" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Patch written <span style="color:var(--dim);font-weight:500">· coder</span></div>
+      <div class="ar" data-i="2"><span class="ck"><svg width="22" height="18" viewBox="0 0 22 18"><path d="M2 9l6 6L20 3" stroke="#B6F36A" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Changes reviewed <span style="color:var(--dim);font-weight:500">· reviewer</span></div>
+    </div>
+    <div id="ansB">
+      <div class="ah" style="color:var(--amber)">BETA · good to know</div>
+      <div class="br" data-i="0"><div class="ix">01</div><div class="tx">Opt in with the beta header<code>OpenAI-Beta: responses_multi_agent=v1</code></div></div>
+      <div class="br" data-i="1"><div class="ix">02</div><div class="tx">Server-side compaction turns on automatically</div></div>
+      <div class="br" data-i="2"><div class="ix">03</div><div class="tx">Not supported yet<code>reasoning.summary · max_tool_calls · /responses/compact</code></div></div>
+    </div>
+  </div>
+
+  <!-- S10 CTA -->
+  <svg id="ctaTree" class="abs" viewBox="0 0 1080 1350" style="width:1080px;height:1350px"></svg>
+  <div id="cta" class="abs">
+    <div class="big" id="c1">Stop prompting<br>one agent.</div>
+    <div class="big grad" id="c2" style="margin-top:14px">Start running<br>a team.</div>
+    <div class="doc" id="c3">Docs: <b>OpenAI API › Guides › Multi-agent</b></div>
+  </div>
+  <div id="ctaPill" class="abs"><span class="chip">Save this for your next agent build</span></div>
+  <div id="disc" class="abs">Independent explainer · not affiliated with OpenAI · beta, details may change</div>
+
+  </div>
+  <div id="titles"></div>
+  <div id="prog" class="abs"></div>
+</div>
+
+<script>
+// ---------- helpers (every visual is a pure function of t) ----------
+const $ = id => document.getElementById(id);
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const P = (t, a, b) => cl((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const oC = k => 1 - Math.pow(1 - k, 3);
+const iC = k => k * k * k;
+const ioC = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const oX = k => k === 1 ? 1 : 1 - Math.pow(2, -10 * k);
+const oB = k => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+function S(el, o = {}) {
+  const x = o.x ?? 0, y = o.y ?? 0, s = o.s ?? 1, r = o.r ?? 0;
+  el.style.transform = `translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;
+  el.style.opacity = o.o ?? 1;
+  el.style.filter = o.b ? `blur(${o.b}px)` : 'none';
+  el.style.visibility = (o.o ?? 1) <= 0.001 ? 'hidden' : 'visible';
+}
+const DUR = 34.5;
+const WARP = [[0, 0], [3.3, 3.3], [4.9, 5.4], [29.8, 30.3], [30.8, 32.1], [34.5, 36]];
+function warp(t) { for (let i = 1; i < WARP.length; i++) { const [n0, o0] = WARP[i - 1], [n1, o1] = WARP[i]; if (t <= n1) return o0 + (t - n0) / (n1 - n0) * (o1 - o0); } return 36; }
+
+// ---------- titles ----------
+const TITLES = [
+  [3.05, 5.75, 'Before: <span class="grad">one agent</span>,<br>one step at a time.'],
+  [6.05, 9.25, 'Now: flip <span class="grad2">one flag</span>.<small>Multi-agent is a beta option on the Responses API.</small>'],
+  [9.4, 13.3, 'The model spawns its<br>own <span class="grad">subagents</span>.<small>A tree, each agent addressed by path.</small>'],
+  [13.55, 16.8, 'They work <span class="grad2">in parallel</span>.<small>Then hand their results back up.</small>'],
+  [17.05, 21.8, '<span class="grad">6 hosted actions</span>.<br>Zero orchestration code.<small>Orchestration runs inside the API, not in your code.</small>'],
+  [22.05, 25.3, 'Every step lands<br>in the <span class="grad2">output</span>.<small>3 new item types, plus the final answer.</small>'],
+  [25.55, 28.85, '<span class="mono" style="font-size:60px;color:var(--lime)">/root</span> merges it all<br>into <span class="grad2">one answer</span>.'],
+  [29.05, 32.2, 'Know before<br>you <span class="grad">ship</span>.'],
+];
+const titleEls = TITLES.map(([s, e, h]) => {
+  const d = document.createElement('div'); d.className = 'abs title'; d.innerHTML = h; $('titles').appendChild(d); return d;
+});
+function titles(t) {
+  TITLES.forEach(([s, e], i) => {
+    const el = titleEls[i];
+    const a = oC(P(t, s, s + .45)), z = iC(P(t, e - .28, e));
+    if (t < s || t > e) return S(el, { o: 0 });
+    S(el, { y: (1 - a) * 46 - z * 50, o: a * (1 - z), b: (1 - a) * 10 + z * 10 });
+  });
+}
+
+// ---------- background ----------
+function bg(t) {
+  S($('glowA'), { x: 380 + Math.sin(t * .35) * 160, y: -260 + Math.cos(t * .27) * 120, o: .9 });
+  S($('glowB'), { x: -320 + Math.cos(t * .3) * 140, y: 700 + Math.sin(t * .22) * 150, o: .8 });
+  S($('grid'), { x: -80 - (t * 9) % 40, y: -80 - (t * 6) % 40, o: 1 });
+  const hv = P(t, 3.0, 3.4) * (1 - P(t, 32.4, 32.8));
+  S($('hdr'), { o: hv, y: (1 - oC(P(t, 3.0, 3.4))) * -20 });
+}
+
+// ---------- tree geometry ----------
+const NODES = [
+  { id: 'root', lab: '/root', x: 540, y: 470, c: 'var(--lime)' },
+  { id: 'res', lab: '/root/researcher', x: 205, y: 720, c: 'var(--cyan)', p: 'root' },
+  { id: 'cod', lab: '/root/coder', x: 540, y: 720, c: 'var(--violet)', p: 'root' },
+  { id: 'rev', lab: '/root/reviewer', x: 875, y: 720, c: 'var(--pink)', p: 'root' },
+  { id: 'doc', lab: '/root/researcher/docs', x: 400, y: 960, c: 'var(--amber)', p: 'res' },
+];
+const N = {};
+NODES.forEach(n => {
+  const d = document.createElement('div'); d.className = 'abs node'; d.id = n.id; d.style.setProperty('--c', n.c);
+  d.innerHTML = `<svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="3" stroke-linecap="round" stroke-dasharray="60 229"/></svg><div class="o"><div class="core"></div></div><div class="lab"><span>${n.lab}</span></div>` +
+    (n.id !== 'root' ? `<div class="bar"><i></i></div><div class="st"></div>` : '');
+  $('nodes').appendChild(d); N[n.id] = { ...n, el: d };
+  if (n.p) {
+    const p = NODES.find(q => q.id === n.p);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const y0 = p.y + (p.id === 'root' ? 50 : 40), y1 = n.y - 40;
+    path.setAttribute('d', n.id === 'doc' ? `M${p.x + 40},${p.y} C${p.x + 140},${p.y} ${n.x},${p.y + 90} ${n.x},${y1}` : `M${p.x},${y0} C${p.x},${(y0 + y1) / 2} ${n.x},${(y0 + y1) / 2} ${n.x},${y1}`);
+    path.setAttribute('fill', 'none'); path.setAttribute('stroke', 'url(#eg)'); path.setAttribute('stroke-width', '4');
+    path.setAttribute('stroke-linecap', 'round'); path.setAttribute('pathLength', '1'); path.setAttribute('stroke-dasharray', '1 1');
+    $('edges').appendChild(path); N[n.id].edge = path;
+  }
+});
+// small hook / cta tree glyphs
+function glyph(svg, sc, ox, oy) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('transform', `translate(${ox},${oy}) scale(${sc})`);
+  let h = '';
+  NODES.forEach(n => { if (n.p) { const p = NODES.find(q => q.id === n.p); h += `<path class="ge" data-i="${NODES.indexOf(n) - 1}" pathLength="1" stroke-dasharray="1 1" d="M${p.x},${p.y} C${p.x},${(p.y + n.y) / 2} ${n.x},${(p.y + n.y) / 2} ${n.x},${n.y}" stroke="url(#eg)" stroke-width="${5 / sc}" fill="none"/>`; } });
+  NODES.forEach((n, i) => { h += `<circle class="gn" data-i="${i}" cx="${n.x}" cy="${n.y}" r="${(n.id === 'root' ? 30 : 22)}" fill="#151a29" stroke="${['#B6F36A', '#5CE1FF', '#9B7BFF', '#FF6FA8', '#FFB547'][i]}" stroke-width="${5 / sc}"/>`; });
+  g.innerHTML = h; svg.appendChild(g); return g;
+}
+const hookG = glyph($('hookTree'), .9, 54, 407);
+const ctaG = glyph($('ctaTree'), .6, 216, -12);
+
+// tasks list
+const TASKS = ['Read the codebase', 'Find the bug', 'Write the fix', 'Write tests', 'Run review', 'Summarize'];
+$('tasks').innerHTML = '<div id="taskHi" class="abs"></div>' + TASKS.map(s => `<div class="task"><span class="bx"><svg width="20" height="16" viewBox="0 0 20 16"><path d="M2 8l5 5L18 2" stroke="#B6F36A" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="tl">${s}</span></div>`).join('');
+const taskEls = [...document.querySelectorAll('.task')];
+
+// actions
+const ACTS = [
+  ['spawn_agent', 'create a subagent'],
+  ['send_message', 'message another agent'],
+  ['followup_task', 'give an agent more work'],
+  ['wait_agent', 'wait for an agent to finish'],
+  ['interrupt_agent', 'stop an agent mid-task'],
+  ['list_agents', 'inspect the whole tree'],
+];
+$('bandIn').innerHTML = ACTS.map(([a, d]) => `<div class="act"><div class="a"><em>›</em> ${a}</div><div class="d">${d}</div></div>`).join('');
+const A0 = 17.25, AD = 0.78;
+
+// code typing
+const TYPED = '    multi_agent={<span class="s">"enabled"</span>: <span class="n" id="tok">True</span>},';
+const TYPED_PLAIN = '    multi_agent={"enabled": True},';
+function typedHTML(n) {
+  // reveal first n plain chars while keeping syntax colour
+  let out = '', cnt = 0, i = 0;
+  while (i < TYPED.length && cnt < n) {
+    if (TYPED[i] === '<') { const j = TYPED.indexOf('>', i); out += TYPED.slice(i, j + 1); i = j + 1; continue; }
+    out += TYPED[i]; cnt++; i++;
+  }
+  // close open spans
+  const opens = (out.match(/<span/g) || []).length, closes = (out.match(/<\/span>/g) || []).length;
+  return out + '</span>'.repeat(opens - closes);
+}
+let tokRect = null;
+function measureTok() {
+  $('typed').innerHTML = typedHTML(999);
+  S($('code'), {});
+  const r = $('tok').getBoundingClientRect();
+  tokRect = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  const C = $('code').getBoundingClientRect();
+  calloutPos = { x: C.left + 34 + 4 * 21.6, y: C.bottom + 40 + 24 };
+}
+let calloutPos;
+
+// ---------- scenes ----------
+function hook(t) {
+  const out = P(t, 2.45, 2.85), oo = iC(out);
+  const push = 1 + t * .012;
+  S($('hook'), { s: push * (1 + oo * 1.8), o: 1 - oo, b: oo * 22, x: -oo * 60 });
+  S($('h1'), {});
+  const a2 = P(t, .3, .6), a3 = P(t, .55, .85);
+  S($('h2'), { y: (1 - oX(a2)) * 90, o: a2 > 0 ? cl(a2 * 2.5) : 0, s: lerp(1.25, 1, oX(a2)), b: (1 - a2) * 12 });
+  S($('h3'), { y: (1 - oX(a3)) * 90, o: a3 > 0 ? cl(a3 * 2.5) : 0, s: lerp(1.25, 1, oX(a3)), b: (1 - a3) * 12 });
+  S($('badge'), { o: 1 - iC(P(t, 2.45, 2.8)), y: -iC(P(t, 2.45, 2.8)) * 30 });
+  const ht = $('hookTree'); ht.style.transformOrigin = '540px 830px';
+  const sh = ioC(P(t, 2.5, 3.0));
+  S(ht, { x: sh * (230 - 540), y: sh * (720 - 830), s: lerp(1 + t * .015, .22, sh), o: 1 - P(t, 2.85, 3.0) });
+  hookG.querySelectorAll('.ge').forEach(e => { const i = +e.dataset.i; e.setAttribute('stroke-dashoffset', 1 - oC(P(t, .08 + i * .1, .4 + i * .1))); });
+  // pulse nodes of glyph sequentially
+  hookG.querySelectorAll('.gn').forEach((c, i) => {
+    const pop = i === 0 ? 1 : oB(P(t, .25 + (i - 1) * .1, .5 + (i - 1) * .1));
+    c.setAttribute('r', (i === 0 ? 34 : 25) * pop);
+    const k = Math.sin(P((t + 1.5 - i * .12) % 1.5, 0, .45) * Math.PI) * P(t, .8, 1.0);
+    c.setAttribute('fill', k > .02 ? `rgba(182,243,106,${.5 * k})` : (i === 0 ? '#B6F36A' : '#1B2136'));
+  });
+}
+
+function solo(t) {
+  const vis = t > 2.55 && t < 6.3;
+  if (!vis) { S($('solo'), { o: 0 }); return; }
+  const inn = oC(P(t, 2.6, 3.0));
+  S($('solo'), { o: inn });
+  // node: enters from slight scale, exits by sliding to centre and growing into the code card
+  const ex = ioC(P(t, 5.55, 6.05));
+  const nx = lerp(110, 400, ex), ny = lerp(560, 580, ex);
+  S($('soloNode'), { x: nx - 110, y: ny - 560, s: lerp(lerp(.85, 1, inn), 1.5, ex), o: 1 - P(t, 5.9, 6.1) });
+  S($('soloRing'), { x: nx - 110, y: ny - 560, r: t * 220, o: 1 - P(t, 5.5, 5.75) });
+  const tin = oC(P(t, 2.75, 3.15));
+  const tout = iC(P(t, 5.45, 5.85));
+  S($('tasks'), { x: (1 - tin) * 120 + tout * 260, o: tin * (1 - tout), b: tout * 10 });
+  S($('stepCtr'), { x: (1 - tin) * 120 + tout * 260, o: tin * (1 - tout) });
+  // sequential stepping
+  const T0 = 3.3, STEP = 0.36;
+  const kf = (t - T0) / STEP;
+  const k = cl(Math.floor(kf), 0, 5);
+  const within = cl(kf - Math.floor(kf));
+  const hiY = 18 + (k + oC(cl((within - .7) / .3)) * (kf < 5 ? 1 : 0)) * 78;
+  S($('taskHi'), { y: Math.min(hiY, 18 + 5 * 78), o: kf < 6.4 ? 1 : 1 - P(kf, 6.4, 6.8) });
+  taskEls.forEach((el, i) => {
+    const done = kf >= i + 1;
+    const ck = el.querySelector('svg'); ck.style.opacity = done ? 1 : 0;
+    el.querySelector('.bx').style.borderColor = done ? 'var(--lime)' : (i === k ? 'var(--cyan)' : '#3A4155');
+    el.style.color = i === k && !done ? 'var(--ink)' : (done ? '#C2C9D8' : 'var(--dim)');
+  });
+  $('stepN').textContent = Math.min(6, k + 1);
+}
+
+function code(t) {
+  if (t < 5.85 || t > 9.6) { S($('code'), { o: 0 }); S($('callout'), { o: 0 }); S($('fly'), { o: 0 }); return; }
+  const g = oX(P(t, 5.85, 6.35));
+  const ex = iC(P(t, 9.0, 9.45));
+  S($('code'), { s: lerp(.25, 1, g), o: cl(g * 1.6) * (1 - ex), y: lerp(140, 40, g) + ex * 110, b: (1 - g) * 14 + ex * 12 });
+  // lines reveal
+  const lines = [...document.querySelectorAll('#pre .ln')];
+  lines.forEach((l, i) => {
+    if (i === 6) return;
+    const a = oC(P(t, 5.95 + i * .05, 6.25 + i * .05));
+    l.style.opacity = a; l.style.transform = `translateX(${(1 - a) * 30}px)`;
+  });
+  const lt = lines[6]; lt.style.opacity = 1; lt.style.transform = 'none';
+  const n = Math.floor(cl((t - 6.55) / .9) * TYPED_PLAIN.length);
+  $('typed').innerHTML = typedHTML(n);
+  const blink = (t > 7.8) ? (Math.floor(t * 4) % 2 === 0 ? 1 : 0) : 1;
+  $('caret').style.opacity = t < 6.5 ? 0 : blink * (1 - P(t, 8.4, 8.5));
+  const hl = oC(P(t, 7.85, 8.15));
+  $('hiLine').style.transform = `scaleX(${hl})`;
+  // pulse the token
+  const tok = $('tok');
+  if (tok) { const pz = P(t, 8.2, 8.9); tok.style.textShadow = `0 0 ${18 * Math.sin(pz * Math.PI)}px #FFB547`; }
+  const ca = oB(P(t, 8.1, 8.45));
+  S($('callout'), { x: calloutPos.x, y: calloutPos.y + (1 - ca) * 30, s: lerp(.7, 1, ca), o: P(t, 8.1, 8.25) * (1 - P(t, 8.95, 9.15)) });
+}
+
+function fly(t) {
+  const el = $('fly');
+  if (t < 8.95 || t > 9.62) { S(el, { o: 0 }); return; }
+  const k = ioC(P(t, 8.95, 9.5));
+  const cs = camS(8.95), sx = 540 + (tokRect.x - 540) * cs, sy = 720 + (tokRect.y + 40 - 720) * cs; // card rests at y+40, inside the camera
+  const x = lerp(sx, N.root.x, k), y = lerp(sy, N.root.y, k) - Math.sin(k * Math.PI) * 120;
+  S(el, { x, y, s: lerp(.5, 1.26, k), o: P(t, 8.95, 9.05) * (1 - P(t, 9.5, 9.62)) });
+}
+
+function tree(t) {
+  // global tree presence/dim
+  const on = t >= 9.45 && t < 29.2;
+  const dim = 1 - oC(P(t, 21.7, 22.0)) + oC(P(t, 25.55, 25.9));
+  const ty = -60 * oC(P(t, 21.85, 22.3)) + 60 * oC(P(t, 25.45, 25.9));
+  S($('treeSvg'), { o: on ? dim : 0, y: ty });
+  S($('nodes'), { o: on ? dim : 0, y: ty });
+  if (!on) { S($('spawnChip'), { o: 0 }); S($('task2'), { o: 0 }); S($('msgDot'), { o: 0 }); S($('conc'), { o: 0 }); S($('xMark'), { o: 0 }); return; }
+
+  // root
+  const rIn = P(t, 9.45, 9.75);
+  const collapse = ioC(P(t, 26.75, 27.3));
+  S(N.root.el, { x: N.root.x, y: N.root.y, s: lerp(1.15, 1, oB(rIn)) * (1 - P(t, 27.35, 27.5)), o: rIn > 0 ? 1 : 0 });
+  N.root.el.querySelector('.lab').style.opacity = oC(P(t, 9.6, 9.9));
+
+  // spawn
+  const kids = ['res', 'cod', 'rev'];
+  const sc = oB(P(t, 9.6, 9.9));
+  S($('spawnChip'), { x: N.root.x - 290, y: N.root.y - 24 + (1 - sc) * 12, s: lerp(.6, 1, sc), o: P(t, 9.6, 9.7) * (1 - P(t, 12.9, 13.2)) });
+  const spawnT = { res: 9.75, cod: 9.88, rev: 10.01, doc: 10.9 };
+  for (const id of ['res', 'cod', 'rev', 'doc']) {
+    const n = N[id], st = spawnT[id];
+    const e = oC(P(t, st, st + .4)) * (1 - collapse);
+    n.edge.setAttribute('stroke-dashoffset', 1 - oC(P(t, st, st + .4)));
+    n.edge.style.opacity = 1 - P(t, 26.7, 26.95);
+    const pop = oB(P(t, st + .3, st + .62));
+    const p = N[n.p];
+    const cx = lerp(n.x, N.root.x, collapse), cy = lerp(n.y, N.root.y, collapse);
+    S(n.el, { x: cx, y: cy, s: pop * (1 - collapse * .85), o: (P(t, st + .3, st + .4)) * (1 - P(t, 27.1, 27.3)) });
+    n.el.querySelector('.lab').style.opacity = oC(P(t, st + .45, st + .8)) * (1 - P(t, 26.6, 26.85));
+  }
+  // rings spin while working
+  for (const n0 of NODES) {
+    const n = N[n0.id];
+    const ring = n.el.querySelector('.ring');
+    const work = (n.id === 'root') ? (t > 19.6 && t < 20.4 ? 1 : 0) : (P(t, 13.9, 14.1) * (1 - P(t, 16.7, 17.0)));
+    let w = work;
+    if (n.id === 'doc') w = P(t, 15.05, 15.2) * (1 - P(t, 16.7, 17.0));
+    if (t >= A0 && t < A0 + AD) continue;
+    ring.style.opacity = w; ring.style.transform = `rotate(${t * 300}deg)`;
+  }
+
+  // S5 parallel progress
+  const pin = P(t, 13.6, 13.9), pout = P(t, 16.75, 17.05);
+  const rates = { res: [14.0, 15.9], cod: [14.0, 15.0], rev: [14.0, 16.3], doc: [15.1, 16.5] };
+  for (const id of ['res', 'cod', 'rev', 'doc']) {
+    const n = N[id]; const bar = n.el.querySelector('.bar'); const st = n.el.querySelector('.st');
+    const [a, b] = rates[id];
+    const f = ioC(P(t, a, b));
+    bar.style.opacity = pin * (1 - pout); st.style.opacity = pin * (1 - pout);
+    bar.firstElementChild.style.transform = `scaleX(${f})`;
+    let s = f >= 1 ? '✓ done' : (t >= a ? 'running' : 'queued');
+    st.textContent = s; st.style.color = f >= 1 ? 'var(--lime)' : (t >= a ? 'var(--ink)' : 'var(--amber)');
+  }
+  const cin = oC(P(t, 14.1, 14.5));
+  S($('conc'), { y: (1 - cin) * 40, o: cin * (1 - P(t, 16.7, 16.95)) });
+
+  // S6 action reactions
+  const ai = Math.floor((t - A0) / AD);
+  const lp = cl((t - A0) / AD - ai);
+  // spawn_agent: edges flash
+  for (const id of ['res', 'cod', 'rev', 'doc']) N[id].edge.setAttribute('stroke-width', 4);
+  if (ai === 0 && t >= A0) for (const [j, id] of ['res', 'cod', 'rev'].entries()) {
+    const k = P(lp, j * .12, j * .12 + .5); N[id].edge.setAttribute('stroke-width', 4 + 12 * Math.sin(k * Math.PI)); const rg = N[id].el.querySelector('.ring'); rg.style.opacity = Math.sin(k * Math.PI); rg.style.transform = `scale(${1 + k * .9})`;
+  }
+  // send_message: dot travels root -> coder
+  const md = $('msgDot');
+  if (ai === 1 && t >= A0) {
+    const k = ioC(P(lp, .05, .8)); const L = N.cod.edge;
+    const pt = L.getPointAtLength(k * L.getTotalLength());
+    S(md, { x: pt.x, y: pt.y, o: P(lp, .05, .15) * (1 - P(lp, .8, .95)) });
+  } else S(md, { o: 0 });
+  // followup_task: chip drops onto reviewer
+  if (ai === 2 && t >= A0) {
+    const k = oB(P(lp, 0, .45));
+    S($('task2'), { x: N.rev.x - 150, y: lerp(N.rev.y - 210, N.rev.y - 130, k), o: P(lp, 0, .12) * (1 - P(lp, .82, 1)) });
+  } else S($('task2'), { o: 0 });
+  // interrupt_agent: docs goes amber/paused
+  const intr = (ai >= 4 && ai <= 4) && t >= A0 ? Math.sin(P(lp, 0, 1) * Math.PI) : 0;
+  N.doc.el.querySelector('.o').style.borderColor = intr > .05 ? `rgba(255,95,95,${.4 + .6 * intr})` : '';
+  N.doc.el.querySelector('.o .core').style.transform = `scale(${1 - .5 * intr})`;
+  N.doc.el.querySelector('.o .core').style.borderRadius = intr > .05 ? '4px' : '50%';
+  S($('xMark'), { x: N.doc.x, y: N.doc.y, s: .6 + .4 * oB(P(lp, 0, .3)), o: (ai === 4 && t >= A0) ? intr : 0 });
+  // list_agents: labels flash sequentially
+  NODES.forEach((n0, j) => {
+    const n = N[n0.id];
+    const lab = n.el.querySelector('.lab');
+    if (ai === 5 && t >= A0) { const k = P(lp, j * .1, j * .1 + .35); const v = Math.sin(k * Math.PI); lab.style.color = v > .02 ? `rgb(${lerp(244, 182, v)},${lerp(246, 243, v)},${lerp(251, 106, v)})` : ''; lab.style.textShadow = `0 0 ${16 * v}px rgba(182,243,106,.8)`; }
+    else { lab.style.color = ''; lab.style.textShadow = 'none'; }
+  });
+
+  // S8 results flow up
+  const dotEls = upDots;
+  ['res', 'cod', 'rev', 'doc'].forEach((id, j) => {
+    const d = dotEls[j]; const k = ioC(P(t, 25.9 + j * .1, 26.6 + j * .1));
+    if (k <= 0 || k >= 1) { S(d, { o: 0 }); return; }
+    const L = N[id].edge, pt = L.getPointAtLength((1 - k) * L.getTotalLength());
+    S(d, { x: pt.x, y: pt.y, o: 1 });
+  });
+}
+const upDots = [0, 1, 2, 3].map(i => { const d = document.createElement('div'); d.className = 'abs'; d.style.cssText = 'width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#B6F36A;box-shadow:0 0 20px #B6F36A'; $('nodes').appendChild(d); return d; });
+
+function band(t) {
+  const bi = oC(P(t, 17.0, 17.35)), bo = iC(P(t, 21.65, 21.9));
+  S($('band'), { y: (1 - bi) * 60 + bo * 60, o: bi * (1 - bo) });
+  // vertical carousel: snap with ease between items
+  const f = Math.max(0, (t - A0) / AD);
+  const i = cl(Math.floor(f), 0, 5); const lp = cl(f - Math.floor(f));
+  const k = i + (i < 5 ? ioC(cl((lp - .78) / .22)) : 0);
+  S($('bandIn'), { y: -cl(k, 0, 5) * 170 });
+  [...$('bandIn').children].forEach((c, j) => { c.style.opacity = 1 - cl(Math.abs(j - k)) * .85; });
+  $('bandIdx').textContent = `${i + 1} / 6`;
+}
+
+function log(t) {
+  if (t < 21.9 || t > 26) { S($('log'), { o: 0 }); return; }
+  const a = oX(P(t, 21.95, 22.4)), z = iC(P(t, 25.25, 25.55));
+  S($('log'), { y: (1 - a) * 260 + z * 300, o: cl(a * 1.5) * (1 - z), b: z * 8 });
+  document.querySelectorAll('#log .row').forEach((r, i) => {
+    const k = oC(P(t, 22.1 + i * .32, 22.4 + i * .32));
+    r.style.opacity = k; r.style.transform = `translateY(${(1 - k) * 24}px)`;
+    const nw = r.querySelector('.new'); if (nw) nw.style.transform = `scale(${oB(P(t, 22.25 + i * .32, 22.55 + i * .32))})`;
+  });
+}
+
+function ans(t) {
+  const el = $('ans');
+  if (t < 27.3 || t > 32.6) { S(el, { o: 0 }); return; }
+  const g = ioC(P(t, 27.3, 27.75));
+  // morph from the /root node (96px circle) into the card
+  const cx = 540, cy = lerp(N.root.y, 790, g);
+  el.style.width = lerp(96, 980, g) + 'px'; el.style.height = lerp(96, 640, g) + 'px';
+  el.style.margin = `${-lerp(96, 640, g) / 2}px 0 0 ${-lerp(96, 980, g) / 2}px`;
+  el.style.borderRadius = lerp(48, 34, g) + 'px';
+  const fz = iC(P(t, 32.2, 32.55));
+  S(el, { x: cx, y: cy, s: 1 + fz * 1.6, o: 1 - fz, b: fz * 20 });
+  const sw = ioC(P(t, 28.95, 29.35));
+  $('ansA').style.opacity = (1 - P(t, 28.9, 29.08)) * cl((g - .55) * 3.5); $('ansA').style.transform = `translateY(${-sw * 30}px)`;
+  $('ansB').style.opacity = P(t, 29.08, 29.3); $('ansB').style.transform = `translateY(${(1 - sw) * 30}px)`;
+  document.querySelectorAll('#ansA .ar').forEach((r, i) => { const k = oC(P(t, 27.55 + i * .08, 27.8 + i * .08)); r.style.opacity = k; r.style.transform = `translateX(${(1 - k) * 30}px)`; });
+  document.querySelectorAll('#ansB .br').forEach((r, i) => { const k = oC(P(t, 29.15 + i * .22, 29.45 + i * .22)); r.style.opacity = k; r.style.transform = `translateX(${(1 - k) * 30}px)`; });
+}
+
+function cta(t) {
+  const on = t > 32.4;
+  if (!on) { ['cta', 'ctaPill', 'disc', 'ctaTree'].forEach(i => S($(i), { o: 0 })); return; }
+  const drift = (t - 32.5) * .004;
+  const a1 = oX(P(t, 32.5, 32.95)), a2 = oX(P(t, 32.75, 33.2)), a3 = oC(P(t, 33.35, 33.75));
+  S($('cta'), { s: 1 + drift, o: 1 });
+  S($('c1'), { y: (1 - a1) * 70, o: cl(a1 * 1.6), b: (1 - a1) * 10 });
+  S($('c2'), { y: (1 - a2) * 70, o: cl(a2 * 1.6), b: (1 - a2) * 10 });
+  S($('c3'), { y: (1 - a3) * 20, o: a3 });
+  const pp = oB(P(t, 33.6, 34.0));
+  S($('ctaPill'), { s: lerp(.8, 1, pp), o: P(t, 33.6, 33.75) });
+  S($('disc'), { o: P(t, 33.8, 34.2) });
+  const tg = oC(P(t, 32.45, 32.95));
+  S($('ctaTree'), { o: tg, s: lerp(.6, 1, tg) + drift });
+  ctaG.querySelectorAll('.gn').forEach((c, i) => {
+    const k = Math.sin(P((t - 33.2) % 1.6, i * .12, i * .12 + .5) * Math.PI);
+    c.setAttribute('fill', k > .02 ? `rgba(182,243,106,${.6 * k})` : '#151a29');
+  });
+}
+
+// slow camera push that only resets underneath transitions (kept at 1 when carried objects hand over)
+const CAM = [
+  [0, 2.55, 1, 1.02], [2.55, 3.0, 1.02, 1],
+  [3.0, 5.5, 1, 1.05], [5.5, 5.95, 1.05, 1],
+  [5.95, 8.95, 1, 1.05], [8.95, 9.45, 1.05, 1],
+  [9.45, 21.85, 1, 1.05], [21.85, 22.3, 1.05, 1],
+  [22.3, 25.4, 1, 1.05], [25.4, 25.9, 1.05, 1],
+  [25.9, 29.0, 1, 1.04], [29.0, 32.25, 1.04, 1.1], [32.25, 32.7, 1.1, 1], [32.7, 36, 1, 1.05],
+];
+function camS(t) {
+  for (const [a, b, s0, s1] of CAM) if (t >= a && t < b) { const k = P(t, a, b); return lerp(s0, s1, s1 > s0 ? k : ioC(k)); }
+  return 1.05;
+}
+function cam(t) { $('cam').style.transform = `scale(${camS(t)})`; }
+// tertiary motion: data pulses flowing down every edge while the tree is alive
+const flowDots = [];
+['res', 'cod', 'rev', 'doc'].forEach(id => [0, 1].forEach(j => { const d = document.createElement('div'); d.className = 'abs'; d.style.cssText = 'width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff;box-shadow:0 0 14px #5CE1FF'; $('nodes').appendChild(d); flowDots.push({ id, j, d }); }));
+function flow(t) {
+  const sp = { res: 9.75, cod: 9.88, rev: 10.01, doc: 10.9 };
+  for (const { id, j, d } of flowDots) {
+    const st = sp[id] + .7; const on = P(t, st, st + .3) * (1 - P(t, 21.6, 21.85)) * (t < 25.5 ? 1 : 0);
+    if (on <= 0) { S(d, { o: 0 }); continue; }
+    const ph = ((t - st) * .9 + j * .5) % 1; const L = N[id].edge, pt = L.getPointAtLength(ph * L.getTotalLength());
+    S(d, { x: pt.x, y: pt.y, o: on * Math.sin(ph * Math.PI) * .9 });
+  }
+}
+function render(tn) {
+  const t = warp(tn);
+  $('prog').style.transform = `scaleX(${tn / DUR})`;
+  cam(t); flow(t); bg(t); hook(t); solo(t); code(t); fly(t); tree(t); band(t); log(t); ans(t); cta(t); titles(t);
+}
+window.render = render;
+window.ready = document.fonts.ready.then(() => { measureTok(); render(0); return true; });
+// preview mode: ?t=12.3 or autoplay
+const q = new URLSearchParams(location.search);
+if (q.has('play')) { const t0 = performance.now(); (function loop() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })(); }
+</script>
+<div id="fly" class="abs" style="position:absolute"></div>
+</body>
+</html>
