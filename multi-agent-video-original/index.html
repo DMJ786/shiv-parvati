@@ -1,0 +1,437 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Agent Team</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  :root{
+    --paper:#F3EEE4; --ink:#161514; --ink2:#5E5A54; --or:#FF5A1F; --bl:#2D5BFF;
+    --y:#FFD84D; --pk:#FF9EC4; --sk:#9EC9FF; --gr:#B8EE9C; --white:#FFFDF8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1350px;overflow:hidden;background:var(--paper)}
+  body{font-family:'Bricolage Grotesque',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  #stage{position:absolute;inset:0;overflow:hidden;background:var(--paper)}
+  .abs{position:absolute;left:0;top:0}
+  .mono{font-family:'IBM Plex Mono',monospace}
+  .it{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+  #grain{inset:0;width:1080px;height:1350px;opacity:.5;mix-blend-mode:multiply;pointer-events:none}
+  #ruled{width:1080px;height:1350px;background-image:linear-gradient(rgba(22,21,20,.055) 1.5px,transparent 1.5px);background-size:100% 54px}
+
+  #hdr{left:64px;top:54px;width:952px;display:flex;justify-content:space-between;font:700 22px 'IBM Plex Mono';letter-spacing:.06em;color:var(--ink2)}
+  #hdr b{color:var(--or)}
+  #prog{left:64px;top:1300px;height:6px;width:952px;background:rgba(22,21,20,.1);border-radius:3px;overflow:hidden}
+  #prog i{display:block;height:100%;background:var(--ink);transform-origin:0 0}
+
+  .scene{width:1080px;height:1350px}
+  .cam{width:1080px;height:1350px;transform-origin:540px 760px}
+  .title{position:absolute;left:64px;top:130px;width:952px}
+  .title .a{font-weight:750;font-size:80px;line-height:.98;letter-spacing:-.035em}
+  .title .b{font-size:104px;line-height:.95;color:var(--or);letter-spacing:-.01em}
+
+  /* S1 */
+  #slam{left:0;top:450px;width:1080px;text-align:center;font-weight:800;font-size:380px;line-height:1;letter-spacing:-.06em}
+  #s1lab{left:0;top:890px;width:1080px;text-align:center;font:700 30px 'IBM Plex Mono';letter-spacing:.08em;color:var(--ink2)}
+  #s1a{left:64px;top:300px;font-weight:800;font-size:150px;line-height:.92;letter-spacing:-.05em}
+  #s1b{left:64px;top:600px;font-size:178px;line-height:.86;color:var(--or)}
+
+  .sticky{position:absolute;box-shadow:0 18px 26px -10px rgba(40,30,10,.28),0 2px 0 rgba(0,0,0,.04);border-radius:4px}
+  .sticky::before{content:'';position:absolute;left:50%;top:-16px;width:110px;height:34px;margin-left:-55px;background:rgba(255,255,255,.55);box-shadow:0 1px 2px rgba(0,0,0,.08);transform:rotate(-3deg)}
+  .note{position:absolute;width:300px;height:104px;margin:-52px 0 0 -150px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:38px;border-radius:4px;box-shadow:0 12px 18px -8px rgba(40,30,10,.3)}
+
+  /* S2 */
+  #agentCard{left:310px;top:810px;width:460px;height:300px;background:var(--y);display:flex;flex-direction:column;justify-content:flex-end;padding:30px 36px}
+  #agentCard .n{font-weight:800;font-size:72px;letter-spacing:-.03em}
+  #agentCard .m{font:700 26px 'IBM Plex Mono';color:var(--ink2)}
+  #queue{left:770px;top:520px;background:var(--ink);color:var(--paper);font:700 30px 'IBM Plex Mono';padding:14px 22px;border-radius:999px}
+
+  /* S3 */
+  #swLab{left:0;top:470px;width:1080px;text-align:center;font:700 44px 'IBM Plex Mono'}
+  #swLab .v{color:var(--ink2)}
+  #pill{left:250px;top:560px;width:580px;height:270px;border-radius:200px;border:9px solid var(--ink);background:var(--white)}
+  #pillTxt{left:250px;top:560px;width:580px;height:270px;display:flex;align-items:center;justify-content:space-between;padding:0 70px;font:700 40px 'IBM Plex Mono'}
+  #code{left:64px;top:900px;width:952px;background:var(--ink);color:#EDE7DA;border-radius:22px;padding:30px 36px;font:500 32px/1.55 'IBM Plex Mono';white-space:pre}
+  #code .o{color:var(--or);font-weight:700}
+  #code .g{color:#9C968B}
+  #knob{left:0;top:0;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font:700 40px 'IBM Plex Mono';box-shadow:0 14px 24px -8px rgba(0,0,0,.4)}
+  #knob span{position:absolute}
+
+  /* org chart */
+  .root{left:0;top:0;width:190px;height:190px;margin:-95px 0 0 -95px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font:700 38px 'IBM Plex Mono';box-shadow:0 14px 24px -8px rgba(0,0,0,.4)}
+  .agent{width:290px;height:200px;margin:-100px 0 0 -145px;padding:26px 26px;display:flex;flex-direction:column;justify-content:space-between}
+  .agent .r{font-weight:800;font-size:46px;letter-spacing:-.03em;line-height:1}
+  .agent .p{font:700 23px 'IBM Plex Mono';color:rgba(22,21,20,.72)}
+  .agent.small{width:330px;height:140px;margin:-70px 0 0 -165px;padding:20px 24px}
+  .agent.small .r{font-size:38px}
+  svg.str{position:absolute;left:0;top:0;width:1080px;height:1350px;overflow:visible}
+
+  /* S5 race */
+  .lane{position:absolute;left:64px;width:952px}
+  .lane .h{font:700 30px 'IBM Plex Mono';letter-spacing:.04em;margin-bottom:16px;display:flex;justify-content:space-between}
+  .track{height:84px;border:5px solid var(--ink);border-radius:16px;background:var(--white);position:relative;overflow:hidden;margin-bottom:14px}
+  .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;padding-left:18px;font:700 26px 'IBM Plex Mono';white-space:nowrap;overflow:hidden;border-right:4px solid var(--ink)}
+  .stamp{position:absolute;border:7px solid currentColor;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,253,248,.6)}
+  .stamp .w{font-weight:800;font-size:66px;letter-spacing:-.02em;line-height:1}
+  .stamp .c{font:700 28px 'IBM Plex Mono';margin-top:10px}
+
+  /* receipt */
+  #printer{left:150px;top:1150px;width:780px;height:96px;background:var(--ink);border-radius:20px;box-shadow:0 18px 30px -12px rgba(0,0,0,.5)}
+  #printer i{position:absolute;left:60px;right:60px;top:18px;height:10px;border-radius:5px;background:#000}
+  #printer b{position:absolute;right:34px;bottom:22px;width:16px;height:16px;border-radius:50%;background:var(--gr);box-shadow:0 0 12px var(--gr)}
+  #paper{left:210px;width:660px;overflow:hidden;background:var(--white);box-shadow:0 10px 30px rgba(40,30,10,.15)}
+  #rc{width:660px;padding:34px 40px;font:500 28px 'IBM Plex Mono'}
+  #rc .hd{text-align:center;font-weight:700;font-size:30px;letter-spacing:.12em;border-bottom:3px dashed var(--ink);padding-bottom:20px;margin-bottom:10px}
+  #rc .it2{padding:18px 0;border-bottom:2px dotted rgba(22,21,20,.35)}
+  #rc .it2 .k{font-weight:700;font-size:31px}
+  #rc .it2 .s{color:var(--ink2);font-size:25px;margin-top:4px}
+  #rc .ft{text-align:center;font-weight:700;margin-top:22px;letter-spacing:.1em}
+
+  /* final card */
+  #fin{left:0;top:0;background:var(--or);color:var(--ink);border-radius:30px;overflow:hidden;box-shadow:0 30px 50px -20px rgba(120,40,0,.45)}
+  #finIn{position:absolute;left:0;top:0;width:900px;height:540px;padding:44px 52px}
+  #finIn .t{font:700 28px 'IBM Plex Mono'}
+  #finIn .big{font-weight:800;font-size:104px;letter-spacing:-.04em;line-height:1;margin-top:60px}
+  #finIn .sub{font-size:38px;font-weight:600;margin-top:26px;line-height:1.2}
+
+  /* fine print */
+  #fp{left:80px;top:420px;width:920px;height:760px;background:var(--y);padding:56px 60px}
+  #fp .h{font-weight:800;font-size:60px;letter-spacing:-.03em}
+  #fp .h em{font-style:italic;font-family:'Instrument Serif';font-weight:400;color:var(--or);font-size:68px}
+  .fb{margin-top:46px;display:flex;gap:24px}
+  .fb .n{font:700 34px 'IBM Plex Mono';color:var(--or);flex:none;width:52px}
+  .fb .x{font-size:38px;font-weight:650;line-height:1.2}
+  .fb .x code{display:block;font:700 26px 'IBM Plex Mono';margin-top:8px;color:var(--ink2)}
+
+  /* end */
+  #e1{left:64px;top:250px;font-weight:800;font-size:124px;line-height:.92;letter-spacing:-.05em}
+  #e2{left:64px;top:520px;font-size:150px;line-height:.85;color:var(--or)}
+  #e3{left:64px;top:840px;font:700 30px 'IBM Plex Mono';color:var(--ink2)}
+  #e3 b{color:var(--ink)}
+  #e4{left:84px;top:960px;width:470px;height:170px;background:var(--y);padding:28px 32px;font-weight:800;font-size:40px;line-height:1.08;letter-spacing:-.02em}
+  #e5{left:64px;top:1236px;width:952px;font:500 24px 'Bricolage Grotesque';color:var(--ink2)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="ruled" class="abs"></div>
+  <div id="scenes"></div>
+  <div id="knob" class="abs"><span id="kOff">off</span><span id="kOn" style="color:var(--or)">on</span><span id="kRoot">/root</span></div>
+  <div id="hdr" class="abs"><span>MULTI-AGENT · <b>OPENAI RESPONSES API</b></span><span id="cnt">01/10</span></div>
+  <div id="prog" class="abs"><i></i></div>
+  <svg id="grain" class="abs"><filter id="nz"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .5  0 0 0 0 .45  0 0 0 0 .4  0 0 0 .18 0"/></filter><rect width="1080" height="1350" filter="url(#nz)"/></svg>
+</div>
+
+<script>
+// ---------- helpers: every frame is a pure function of t ----------
+const $ = id => document.getElementById(id);
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const P = (t, a, b) => cl((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const oC = k => 1 - Math.pow(1 - k, 3), iC = k => k * k * k;
+const ioC = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const oB = k => { const c1 = 2.2, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+const oE = k => k >= 1 ? 1 : 1 - Math.pow(2, -10 * k);
+function S(el, o = {}) {
+  const x = o.x ?? 0, y = o.y ?? 0, s = o.s ?? 1, r = o.r ?? 0, op = o.o ?? 1;
+  el.style.transform = `translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;
+  el.style.opacity = op; el.style.visibility = op <= .001 ? 'hidden' : 'visible';
+  el.style.filter = o.b ? `blur(${o.b}px)` : 'none';
+}
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function el(tag, cls, html, parent, css) { const d = document.createElement(tag); if (cls) d.className = cls; if (html != null) d.innerHTML = html; if (css) d.style.cssText = css; (parent || $('scenes')).appendChild(d); return d; }
+// hand-drawn string between two points
+function str(svg, x1, y1, x2, y2, bend = 0) {
+  const mx = (x1 + x2) / 2 + bend, my = (y1 + y2) / 2;
+  const d = `M${x1},${y1} Q${mx},${my - 20} ${x2},${y2}`;
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.innerHTML = `<path d="${d}" fill="none" stroke="#161514" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1"/><path d="M${x1 + 2},${y1 + 1} Q${mx + 3},${my - 17} ${x2 + 1},${y2 + 2}" fill="none" stroke="#161514" stroke-opacity=".3" stroke-width="2" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1"/>`;
+  svg.appendChild(g);
+  return k => g.querySelectorAll('path').forEach(p => p.setAttribute('stroke-dashoffset', 1 - k));
+}
+
+// ---------- scene system: whip-pan cuts on the beat ----------
+const DUR = 33.5;
+const SC = [];   // {s, e, inMode, outMode, root, cam, fn}
+function scene(s, e, inMode, outMode, build) {
+  const root = el('div', 'abs scene'); const cam = el('div', 'abs cam', null, root);
+  const o = { s, e, inMode, outMode, root, cam }; o.fn = build(cam, o); SC.push(o); return o;
+}
+function title(parent, a, b) { return el('div', 'title', `<div class="a">${a}</div><div class="b it">${b}</div>`, parent); }
+function titleAnim(tEl, lt) {
+  const [a, b] = tEl.children;
+  const ka = oE(P(lt, .05, .45)), kb = oE(P(lt, .2, .6));
+  S(a, { y: (1 - ka) * 60, o: cl(ka * 1.4) });
+  S(b, { y: (1 - kb) * 70, o: cl(kb * 1.4) });
+}
+function sceneFrame(o, t) {
+  const W = .16;
+  let x = 0, blur = 0, op = 1;
+  if (t < o.s - W || t > o.e + W) { S(o.root, { o: 0 }); return false; }
+  if (o.inMode === 'whip' && t < o.s + W) { const k = P(t, o.s - W, o.s + W); x = 1080 * (1 - ioC(k)); blur = Math.sin(k * Math.PI) * 14; }
+  if (o.inMode === 'cut' && t < o.s) { S(o.root, { o: 0 }); return false; }
+  if (o.inMode === 'fade') op = P(t, o.s - .3, o.s);
+  if (o.outMode === 'whip' && t > o.e - W) { const k = P(t, o.e - W, o.e + W); x = -1080 * ioC(k); blur = Math.sin(k * Math.PI) * 14; }
+  if (o.outMode === 'cut' && t >= o.e) { S(o.root, { o: 0 }); return false; }
+  if (o.outMode === 'fade') op *= 1 - P(t, o.e - .4, o.e);
+  S(o.root, { x, o: op, b: blur });
+  S(o.cam, { s: 1 + .035 * P(t, o.s, o.e) });
+  return true;
+}
+
+// ---------- S1 hook: word slams ----------
+const s1 = scene(0, 2.5, 'none', 'whip', cam => {
+  const slam = el('div', 'abs', 'ONE', cam); slam.id = 'slam';
+  const lab = el('div', 'abs', 'MULTI-AGENT · NEW IN THE RESPONSES API', cam); lab.id = 's1lab';
+  const a = el('div', 'abs', 'One API call.', cam); a.id = 's1a';
+  const b = el('div', 'abs it', 'A whole team<br>of agents.', cam); b.id = 's1b';
+  const cols = ['var(--y)', 'var(--pk)', 'var(--sk)', 'var(--gr)'];
+  const pos = [[870, 1000, 8], [720, 1150, -6], [940, 1180, 5], [600, 1010, -9]];
+  const notes = pos.map(([x, y, r], i) => { const n = el('div', 'note', ['spawn', 'research', 'code', 'review'][i], cam); n.style.background = cols[i]; n.style.width = '230px'; n.style.fontSize = '34px'; n.style.margin = '-52px 0 0 -115px'; return [n, x, y, r]; });
+  return t => {
+    const words = ['ONE', 'API', 'CALL.'];
+    const wi = Math.min(2, Math.floor(t / .5));
+    slam.textContent = words[wi];
+    if (wi === 2) slam.style.color = 'var(--or)'; else slam.style.color = 'var(--ink)';
+    const lt = t - wi * .5;
+    const sOn = t < 1.5;
+    S(slam, { s: lerp(1.12, 1, oE(P(lt, 0, .18))) * (1 + lt * .03), o: sOn ? 1 : 0 });
+    S(lab, { o: sOn ? 1 : 0 });
+    const ka = oE(P(t, 1.5, 1.75)), kb = oE(P(t, 1.62, 1.95));
+    S(a, { y: (1 - ka) * -40, o: t >= 1.5 ? 1 : 0, s: lerp(1.1, 1, ka) });
+    S(b, { y: (1 - kb) * 80, o: t >= 1.6 ? cl(kb * 1.5) : 0 });
+    notes.forEach(([n, x, y, r], i) => { const k = oB(P(t, 1.8 + i * .09, 2.1 + i * .09)); S(n, { x, y: y + (1 - k) * 40, s: k, r: r * k, o: k > 0 ? 1 : 0 }); });
+  };
+});
+
+// ---------- S2 today: one agent buried under a queue ----------
+const TASKS = ['research', 'write code', 'write tests', 'review', 'fix bugs', 'docs', 'more tests', 'summarize'];
+const s2 = scene(2.5, 5.5, 'whip', 'whip', cam => {
+  const tt = title(cam, 'Today, your agent', 'works alone. In order.');
+  const card = el('div', 'abs sticky', '<div class="n">agent</div><div class="m">one task at a time</div>', cam); card.id = 'agentCard';
+  const r = rng(11); const cols = ['var(--white)', 'var(--pk)', 'var(--sk)', 'var(--gr)'];
+  const notes = TASKS.map((s, i) => { const n = el('div', 'note', s, cam); n.style.background = cols[i % 4]; return { n, x: 540 + (r() - .5) * 120, y: 830 - i * 34, rot: (r() - .5) * 16, t0: 2.75 + i * .27 }; });
+  const q = el('div', 'abs', '', cam); q.id = 'queue';
+  return t => {
+    titleAnim(tt, t - 2.5);
+    S(card, { y: (1 - oE(P(t, 2.55, 2.9))) * 50, o: P(t, 2.5, 2.6) });
+    let cnt = 0;
+    notes.forEach(o => { const k = P(t, o.t0, o.t0 + .28); if (k > 0) cnt++; const land = iC(k); S(o.n, { x: o.x, y: lerp(-150, o.y, land) + (k >= 1 ? Math.sin(P(t, o.t0 + .28, o.t0 + .5) * Math.PI) * -8 : 0), r: lerp(o.rot * 3, o.rot, land), o: k > 0 ? 1 : 0 }); });
+    q.textContent = `queue: ${cnt}`;
+    S(q, { y: (cnt ? 0 : 20), s: 1 + .12 * Math.sin(P((t - 2.75) % .27, 0, .27) * Math.PI) * (cnt && cnt < 8 ? 1 : 0), o: P(t, 2.75, 2.85), r: -4 });
+  };
+});
+
+// ---------- S3 the switch ----------
+const SW = { x: 540, y: 695 };
+const s3 = scene(5.5, 8.0, 'whip', 'fade', cam => {
+  const tt = title(cam, 'Now flip', 'one switch.');
+  const lab = el('div', 'abs', 'multi_agent.enabled = <span class="v" id="swv">false</span>', cam); lab.id = 'swLab';
+  const pill = el('div', 'abs', '', cam); pill.id = 'pill';
+  const code = el('div', 'abs', `client.<span class="g">beta.</span>responses.create(
+    ...,
+    multi_agent={"enabled": <span class="o">True</span>},
+    betas=["responses_multi_agent=v1"],
+)`, cam); code.id = 'code';
+  return t => {
+    titleAnim(tt, t - 5.5);
+    const flip = ioC(P(t, 6.55, 6.85));
+    $('swv').textContent = flip > .5 ? 'true' : 'false';
+    $('swv').style.color = flip > .5 ? 'var(--or)' : 'var(--ink2)';
+    S(lab, { y: (1 - oE(P(t, 5.6, 5.95))) * 30, o: P(t, 5.6, 5.8) * (1 - P(t, 7.4, 7.65)), s: 1 + .08 * Math.sin(P(t, 6.6, 6.95) * Math.PI) });
+    pill.style.background = flip > .5 ? 'var(--or)' : 'var(--white)';
+    S(pill, { s: lerp(.85, 1, oB(P(t, 5.55, 5.95))) * (1 + .04 * Math.sin(P(t, 6.6, 6.9) * Math.PI)), o: P(t, 5.55, 5.7) });
+    S(code, { y: (1 - oE(P(t, 5.8, 6.2))) * 60, o: P(t, 5.8, 6.0) });
+  };
+});
+// knob: carried from the switch to become /root
+function knob(t) {
+  const k = $('knob');
+  if (t < 5.5 || t > 8.55) { S(k, { o: 0 }); return; }
+  const flip = ioC(P(t, 6.55, 6.85));
+  const off = { x: SW.x - 155, y: SW.y }, on = { x: SW.x + 155, y: SW.y };
+  const carry = ioC(P(t, 7.7, 8.35));
+  const x = lerp(lerp(off.x, on.x, flip), 540, carry), y = lerp(SW.y, 470, carry) - Math.sin(carry * Math.PI) * 60;
+  const camS = 1 + .035 * P(t, 5.5, 8.0); // matches the S3 camera push
+  const sx = 540 + (x - 540) * (carry < 1 ? lerp(camS, 1, carry) : 1), sy = 760 + (y - 760) * (carry < 1 ? lerp(camS, 1, carry) : 1);
+  S(k, { x: sx, y: sy, s: lerp(lerp(.85, 1, oB(P(t, 5.6, 6.0))), 190 / 220, carry), o: P(t, 5.6, 5.75) * (1 - P(t, 8.4, 8.55)), r: flip * 360 * (1 - carry) });
+  $('kOff').style.opacity = 1 - flip; $('kOn').style.opacity = flip * (1 - P(t, 7.7, 7.95)); $('kRoot').style.opacity = P(t, 7.7, 7.95);
+}
+
+// ---------- org chart (shared layout) ----------
+const ORG = [
+  { r: 'Researcher', p: '/root/researcher', x: 220, y: 800, c: 'var(--y)', rot: -3 },
+  { r: 'Coder', p: '/root/coder', x: 540, y: 800, c: 'var(--sk)', rot: 2 },
+  { r: 'Reviewer', p: '/root/reviewer', x: 860, y: 800, c: 'var(--pk)', rot: -2 },
+];
+const GC = { r: 'Docs', p: '/root/researcher/docs', x: 260, y: 1110, c: 'var(--gr)', rot: 3 };
+function buildOrg(cam) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'str'); svg.setAttribute('viewBox', '0 0 1080 1350'); cam.appendChild(svg);
+  const strs = ORG.map((o, i) => str(svg, 540, 565, o.x, 700, [-60, 0, 60][i]));
+  const gstr = str(svg, 220, 900, GC.x, 1040, 30);
+  const mk = o => { const d = el('div', 'abs sticky agent' + (o === GC ? ' small' : ''), `<div class="r">${o.r}</div><div class="p">${o.p}</div>`, cam); d.style.background = o.c; return d; };
+  const cards = ORG.map(mk); const gcard = mk(GC);
+  const root = el('div', 'abs root', '/root', cam);
+  return { svg, strs, gstr, cards, gcard, root };
+}
+
+// ---------- S4 hires subagents ----------
+const s4 = scene(8.0, 12.0, 'fade', 'whip', cam => {
+  const tt = title(cam, 'It hires its own', 'subagents.');
+  const O = buildOrg(cam);
+  const tag = el('div', 'abs', 'spawn_agent ×4', cam, "font:700 28px 'IBM Plex Mono';background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:10px");
+  return t => {
+    titleAnim(tt, t - 8.1);
+    S(O.root, { x: 540, y: 470, o: t >= 8.4 ? 1 : 0, s: 1 + .06 * Math.sin(P(t, 8.75, 9.05) * Math.PI) });
+    S(tag, { x: 650, y: 400, r: 4, s: oB(P(t, 8.75, 9.0)), o: P(t, 8.75, 8.8) });
+    ORG.forEach((o, i) => {
+      const t0 = 8.85 + i * .22;
+      O.strs[i](oC(P(t, t0, t0 + .3)));
+      const k = oB(P(t, t0 + .2, t0 + .5));
+      S(O.cards[i], { x: o.x, y: o.y + (1 - P(t, t0 + .2, t0 + .5)) * 120, r: o.rot * k, s: lerp(.6, 1, k), o: P(t, t0 + .2, t0 + .28) });
+    });
+    O.gstr(oC(P(t, 10.2, 10.5)));
+    const kg = oB(P(t, 10.4, 10.7));
+    S(O.gcard, { x: GC.x, y: GC.y + (1 - P(t, 10.4, 10.7)) * 100, r: GC.rot * kg, s: lerp(.6, 1, kg), o: P(t, 10.4, 10.48) });
+  };
+});
+
+// ---------- S5 race ----------
+const s5 = scene(12.0, 15.5, 'whip', 'whip', cam => {
+  const tt = title(cam, 'In parallel.', 'Not in a queue.');
+  const A = el('div', 'lane', `<div class="h"><span>BEFORE · 1 AGENT</span><span id="aT"></span></div><div class="track" id="trA"></div>`, cam); A.style.top = '440px';
+  const B = el('div', 'lane', `<div class="h"><span style="color:var(--or)">MULTI-AGENT · 3 SUBAGENTS</span><span id="bT"></span></div><div class="track" id="trB0"></div><div class="track" id="trB1"></div><div class="track" id="trB2"></div>`, cam); B.style.top = '690px';
+  const segA = ['research', 'code', 'review', 'merge'].map((s, i) => el('div', 'seg', s, $('trA'), `left:${i * 25}%;width:0;background:${['var(--y)', 'var(--sk)', 'var(--pk)', 'var(--gr)'][i]}`));
+  const segB = [['/root/researcher', 'var(--y)', 1.15], ['/root/coder', 'var(--sk)', 1.5], ['/root/reviewer', 'var(--pk)', 1.3]].map(([s, c, d], i) => ({ e: el('div', 'seg', s, $('trB' + i), `left:0;width:0;background:${c}`), d }));
+  const stk = el('div', 'abs sticky', `<div style="font:700 30px 'IBM Plex Mono'">max_concurrent_subagents = 3</div><div style="font-weight:650;font-size:30px;margin-top:6px">default · the rest wait their turn</div>`, cam, 'left:150px;top:1135px;width:780px;padding:24px 30px;background:var(--y)');
+  return t => {
+    titleAnim(tt, t - 12.0);
+    S(A, { o: P(t, 12.0, 12.1) }); S(B, { o: P(t, 12.05, 12.15) });
+    const T0 = 12.4;
+    segA.forEach((s, i) => { s.style.width = 25 * P(t, T0 + i * .9, T0 + (i + 1) * .9) + '%'; });
+    segB.forEach(({ e, d }) => { e.style.width = 100 * ioC(P(t, T0, T0 + d)) + '%'; });
+    const doneB = t > T0 + 1.5;
+    $('bT').textContent = doneB ? '✓ done' : (t > T0 ? 'running…' : '');
+    $('aT').textContent = t > T0 ? (t > T0 + 3.6 ? '✓ done' : `step ${Math.min(4, Math.floor((t - T0) / .9) + 1)} / 4`) : '';
+    S(stk, { s: oB(P(t, 14.1, 14.4)), r: -2, o: P(t, 14.1, 14.15) });
+  };
+});
+
+// ---------- S6 stamps ----------
+const MOVES = [['SPAWN', 'spawn_agent', 'var(--or)'], ['MESSAGE', 'send_message', 'var(--bl)'], ['FOLLOW-UP', 'followup_task', 'var(--ink)'], ['WAIT', 'wait_agent', 'var(--ink)'], ['INTERRUPT', 'interrupt_agent', 'var(--or)'], ['LIST', 'list_agents', 'var(--bl)']];
+const s6 = scene(15.5, 20.5, 'whip', 'whip', cam => {
+  const tt = title(cam, '6 built-in moves,', 'run by the API.');
+  const r = rng(5);
+  const st = MOVES.map(([w, c, col], i) => {
+    const d = el('div', 'stamp', `<div class="w">${w}</div><div class="c">${c}</div>`, cam);
+    d.style.color = col; d.style.width = '450px'; d.style.height = '205px';
+    return { d, x: 64 + (i % 2) * 502, y: 440 + Math.floor(i / 2) * 240, rot: (r() - .5) * 7, t0: 15.95 + i * .5 };
+  });
+  const note = el('div', 'abs sticky', 'No orchestration loop in your code.', cam, 'left:330px;top:1170px;width:620px;padding:22px 28px;background:var(--gr);font-weight:750;font-size:36px;letter-spacing:-.01em');
+  return t => {
+    titleAnim(tt, t - 15.5);
+    st.forEach(o => {
+      const k = P(t, o.t0, o.t0 + .13);
+      const sh = k >= 1 ? Math.sin(P(t, o.t0 + .13, o.t0 + .35) * Math.PI * 3) * (1 - P(t, o.t0 + .13, o.t0 + .35)) * 6 : 0;
+      S(o.d, { x: o.x + sh, y: o.y, s: lerp(1.7, 1, iC(k)), r: o.rot, o: k > 0 ? cl(k * 3) : 0 });
+    });
+    S(note, { s: oB(P(t, 19.0, 19.3)), r: 2, o: P(t, 19.0, 19.05) });
+  };
+});
+
+// ---------- S7 receipt ----------
+const s7 = scene(20.5, 24.0, 'whip', 'whip', cam => {
+  const tt = title(cam, 'Every move is', 'on the receipt.');
+  const paper = el('div', 'abs', '', cam); paper.id = 'paper';
+  paper.innerHTML = `<div id="rc"><div class="hd">RESPONSE.OUTPUT</div>
+    <div class="it2"><div class="k">multi_agent_call</div><div class="s">agent=/root · spawn_agent</div></div>
+    <div class="it2"><div class="k">multi_agent_call_output</div><div class="s">agent=/root · result</div></div>
+    <div class="it2"><div class="k">agent_message <span style="font-size:24px;background:var(--ink);color:var(--paper);padding:2px 8px;border-radius:6px">encrypted</span></div><div class="s">/root/coder → /root</div></div>
+    <div class="it2" style="border:none;background:rgba(255,90,31,.12);margin:0 -40px;padding:18px 40px"><div class="k" style="color:var(--or)">message</div><div class="s">agent=/root · phase="final_answer"</div></div>
+    <div class="ft">3 NEW ITEM TYPES ✦</div></div>`;
+  const pr = el('div', 'abs', '<i></i><b></b>', cam); pr.id = 'printer';
+  return t => {
+    titleAnim(tt, t - 20.5);
+    // stepped feed: paper rises in line-sized jerks, like a thermal printer
+    const full = 760, f = P(t, 20.75, 23.0);
+    const steps = 26, h = full * (Math.floor(f * steps) + oC((f * steps) % 1)) / steps;
+    paper.style.top = (1150 - h) + 'px'; paper.style.height = h + 'px';
+    S(paper, { o: h > 1 ? 1 : 0 });
+    S(pr, { y: (1 - oE(P(t, 20.5, 20.8))) * 60 + (f > 0 && f < 1 ? Math.sin(t * 80) * 1.2 : 0) });
+  };
+});
+
+// ---------- S8 merge ----------
+const s8 = scene(24.0, 27.0, 'whip', 'whip', cam => {
+  const tt = title(cam, 'Then /root merges', 'one answer.');
+  const O = buildOrg(cam);
+  const fin = el('div', 'abs', '<div id="finIn"><div class="t">/root · phase: "final_answer"</div><div class="big">✓ One answer.</div><div class="sub">Research, code and review,<br>merged by the root agent.</div></div>', cam); fin.id = 'fin';
+  return t => {
+    titleAnim(tt, t - 24.0);
+    const all = [...ORG, GC], cards = [...O.cards, O.gcard];
+    cards.forEach((c, i) => {
+      const o = all[i], k = ioC(P(t, 24.45 + i * .1, 24.85 + i * .1));
+      S(c, { x: lerp(o.x, 540, k), y: lerp(o.y, 470, k), r: o.rot * (1 - k), s: lerp(1, .15, k), o: 1 - P(t, 24.75 + i * .1, 24.85 + i * .1) });
+    });
+    O.strs.forEach(f => f(1 - P(t, 24.4, 24.8))); O.gstr(1 - P(t, 24.4, 24.6));
+    const g = ioC(P(t, 25.15, 25.6));
+    S(O.root, { x: 540, y: 470, s: 1 + .15 * Math.sin(P(t, 24.85, 25.15) * Math.PI), o: g > .05 ? 0 : 1 });
+    const w = lerp(190, 900, g), h = lerp(190, 540, g);
+    fin.style.width = w + 'px'; fin.style.height = h + 'px'; fin.style.borderRadius = lerp(95, 30, g) + 'px';
+    S(fin, { x: 540 - w / 2, y: lerp(470, 800, g) - h / 2, o: g > .05 ? 1 : 0 });
+    const ki = P(t, 25.45, 25.75); $('finIn').style.opacity = ki; $('finIn').style.transform = `translateY(${(1 - oC(ki)) * 24}px)`;
+  };
+});
+
+// ---------- S9 fine print ----------
+const s9 = scene(27.0, 30.0, 'whip', 'whip', cam => {
+  const fp = el('div', 'abs sticky', `<div class="h">Fine print <em>(it's a beta)</em></div>
+    <div class="fb"><div class="n">01</div><div class="x">Opt in with the beta header<code>OpenAI-Beta: responses_multi_agent=v1</code></div></div>
+    <div class="fb"><div class="n">02</div><div class="x">Compaction runs server-side, automatically</div></div>
+    <div class="fb"><div class="n">03</div><div class="x">Not supported yet<code>reasoning.summary · max_tool_calls<br>/responses/compact</code></div></div>`, cam); fp.id = 'fp';
+  const tt = el('div', 'title', '<div class="a">Before you ship:</div>', cam);
+  return t => {
+    S(tt.firstChild, { y: (1 - oE(P(t, 27.05, 27.4))) * 50, o: P(t, 27.05, 27.2) });
+    S(fp, { r: -1.5, s: lerp(.92, 1, oE(P(t, 27.0, 27.4))) });
+    fp.querySelectorAll('.fb').forEach((b, i) => { const k = oE(P(t, 27.3 + i * .25, 27.65 + i * .25)); b.style.opacity = cl(k * 1.4); b.style.transform = `translateX(${(1 - k) * 40}px)`; });
+  };
+});
+
+// ---------- S10 end card ----------
+const s10 = scene(30.0, 33.5, 'whip', 'none', cam => {
+  const e1 = el('div', 'abs', 'Stop prompting<br>an agent.', cam); e1.id = 'e1';
+  const e2 = el('div', 'abs it', 'Start managing<br>a team.', cam); e2.id = 'e2';
+  const e3 = el('div', 'abs', 'Docs → <b>OpenAI API › Guides › Multi-agent</b>', cam); e3.id = 'e3';
+  const e4 = el('div', 'abs sticky', 'Save this for your next agent build →', cam); e4.id = 'e4';
+  const e5 = el('div', 'abs', 'Independent explainer · not affiliated with OpenAI · beta, details may change', cam); e5.id = 'e5';
+  // mini org doodle
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'str'); cam.appendChild(svg);
+  const R = { x: 820, y: 990 }, kids = [[700, 1130], [820, 1140], [940, 1130]];
+  const ss = kids.map(([x, y], i) => str(svg, R.x, R.y + 30, x, y - 30, [-20, 0, 20][i]));
+  const dots = [R, ...kids.map(([x, y]) => ({ x, y }))].map((p, i) => el('div', 'abs', '', cam, `width:${i ? 50 : 70}px;height:${i ? 50 : 70}px;margin:${i ? -25 : -35}px 0 0 ${i ? -25 : -35}px;border-radius:50%;background:${['var(--ink)', 'var(--y)', 'var(--sk)', 'var(--pk)'][i]};border:4px solid var(--ink)`));
+  return t => {
+    const k1 = oE(P(t, 30.05, 30.45)), k2 = oE(P(t, 30.35, 30.8));
+    S(e1, { y: (1 - k1) * 60, o: cl(k1 * 1.4) });
+    S(e2, { y: (1 - k2) * 70, o: cl(k2 * 1.4) });
+    S(e3, { o: P(t, 30.9, 31.2) });
+    S(e4, { s: oB(P(t, 31.1, 31.45)), r: -3, o: P(t, 31.1, 31.15) });
+    S(e5, { o: P(t, 31.3, 31.6) });
+    dots.forEach((d, i) => { const k = oB(P(t, 30.9 + i * .12, 31.2 + i * .12)); S(d, { x: [R, ...kids.map(([x, y]) => ({ x, y }))][i].x, y: [R, ...kids.map(([x, y]) => ({ x, y }))][i].y, s: k, o: k > 0 ? 1 : 0 }); });
+    ss.forEach((f, i) => f(oC(P(t, 31.0 + i * .1, 31.3 + i * .1))));
+  };
+});
+
+function render(t) {
+  for (const o of SC) if (sceneFrame(o, t)) o.fn(t);
+  knob(t);
+  const idx = SC.findIndex(o => t >= o.s - .001 && t < o.e) ; $('cnt').textContent = String((idx < 0 ? 9 : idx) + 1).padStart(2, '0') + '/10';
+  $('prog').firstChild.style.transform = `scaleX(${t / DUR})`;
+  S($('ruled'), { y: -(t * 6) % 54 });
+}
+window.render = render;
+window.ready = document.fonts.ready.then(() => { render(0); return true; });
+const q = new URLSearchParams(location.search);
+if (q.has('play')) { const t0 = performance.now(); (function loop() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })(); }
+</script>
+</body>
+</html>
