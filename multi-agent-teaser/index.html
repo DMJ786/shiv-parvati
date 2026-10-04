@@ -1,0 +1,402 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Multi-Agent Teaser</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1350px;overflow:hidden;background:#000}
+  body{color:#F2EEE6;-webkit-font-smoothing:antialiased;font-family:'Inter',sans-serif}
+  #stage{position:absolute;inset:0;overflow:hidden;background:#000}
+  .abs{position:absolute;left:0;top:0}
+  #world{width:1080px;height:1350px}
+  canvas{position:absolute;left:0;top:0;width:1080px;height:1350px}
+  #bloom{mix-blend-mode:screen}
+  #vig{inset:0;width:1080px;height:1350px;background:radial-gradient(ellipse 75% 62% at 50% 48%,transparent 55%,rgba(0,0,0,.85) 100%);pointer-events:none}
+  #grain{width:1080px;height:1350px;opacity:.09;mix-blend-mode:screen}
+  #flash{width:1080px;height:1350px;background:#fff;opacity:0}
+  .bar{left:0;width:1080px;height:118px;background:#000;z-index:5}
+  #barT{top:0} #barB{top:1232px}
+  #topTxt{left:0;top:48px;width:1080px;text-align:center;font:600 19px 'Inter';letter-spacing:.42em;color:rgba(242,238,230,.5);z-index:6}
+  #prog{left:340px;top:1286px;width:400px;height:2px;background:rgba(255,255,255,.12);z-index:6}
+  #prog i{display:block;height:100%;background:rgba(242,238,230,.75);transform-origin:0 0}
+
+  /* trailer cards */
+  .card{left:0;width:1080px;text-align:center;font-family:'Cinzel',serif;font-weight:700;color:#F2EEE6;white-space:nowrap}
+  .card.md{font-size:68px;letter-spacing:.1em}
+  .card.lg{font-size:124px;letter-spacing:.04em;font-weight:900}
+  .ca{text-shadow:0 0 40px rgba(255,220,170,.25)}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .lab{font:600 32px 'JetBrains Mono';color:#fff;white-space:nowrap;text-shadow:0 0 14px rgba(120,200,255,.8),0 2px 6px #000}
+  .lab small{display:block;font:500 22px 'Inter';letter-spacing:.2em;color:rgba(242,238,230,.6);margin-top:4px;text-transform:uppercase}
+  #code{left:0;top:600px;width:1080px;text-align:center;font:600 46px 'JetBrains Mono';white-space:pre;color:#C9D2E6}
+  #code .k{color:#8FB8FF} #code .s{color:#B9F27C} #code .t{color:#FFC46B}
+  #codeCap{left:0;top:700px;width:1080px;text-align:center;font:500 26px 'Inter';letter-spacing:.4em;color:rgba(242,238,230,.55)}
+  .laneLab{width:300px;text-align:center;background:rgba(0,0,0,.72);padding:12px 0;border-radius:10px;box-shadow:0 0 30px 10px rgba(0,0,0,.6)}
+  .laneLab .p{font:700 32px 'JetBrains Mono'}
+  .laneLab .st{font:600 28px 'JetBrains Mono';color:rgba(242,238,230,.7);margin-top:6px}
+  #hud{left:190px;top:1080px;width:700px;height:96px;border:1.5px solid rgba(143,184,255,.55);display:flex;align-items:center;justify-content:center;gap:14px;font:600 30px 'JetBrains Mono';background:rgba(4,8,18,.85)}
+  #hud::before,#hud::after{content:'';position:absolute;width:18px;height:18px;border-color:#8FB8FF;border-style:solid}
+  #hud::before{left:-6px;top:-6px;border-width:3px 0 0 3px} #hud::after{right:-6px;bottom:-6px;border-width:0 3px 3px 0}
+  #mvW{left:0;top:760px;width:1080px;text-align:center;font:900 136px 'Cinzel';letter-spacing:.08em}
+  #mvC{left:0;top:925px;width:1080px;text-align:center;font:700 38px 'JetBrains Mono';letter-spacing:.06em;color:rgba(242,238,230,.75)}
+  #mvN{left:0;top:180px;width:1080px;text-align:center;font:600 24px 'Inter';letter-spacing:.5em;color:rgba(242,238,230,.5)}
+  #rec .row{display:flex;align-items:center;justify-content:center;gap:18px;height:104px;font:700 40px 'JetBrains Mono'}
+  #rec .tag{font:800 18px 'Inter';letter-spacing:.2em;color:#000;background:#FFC46B;padding:6px 10px}
+  #rec{left:0;top:470px;width:1080px}
+  #title{left:0;top:420px;width:1080px;text-align:center}
+  #title .w{font:900 212px/0.92 'Cinzel';letter-spacing:.04em;background:linear-gradient(100deg,#7d7466 0%,#e9e2d4 30%,#fffaf0 var(--sw,45%),#b8ad9b 60%,#6f665a 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 24px rgba(255,214,160,.25))}
+  #title .sub{margin-top:40px;font:600 30px 'Inter';letter-spacing:.55em;color:rgba(242,238,230,.75)}
+  #title .beta{margin-top:34px;display:flex;align-items:center;justify-content:center;gap:26px;font:700 34px 'Cinzel';letter-spacing:.3em;color:#FFC46B}
+  #title .beta i{width:120px;height:1.5px;background:rgba(255,196,107,.7)}
+  #bill{left:60px;top:200px;width:960px;text-align:center;font-family:'Oswald';color:rgba(242,238,230,.86);text-transform:uppercase}
+  #bill .l{font-weight:300;font-size:42px;letter-spacing:.04em;line-height:1.36}
+  #bill .l b{font-weight:600;color:#fff}
+  #bill .h{font-family:'Cinzel';font-weight:700;font-size:40px;letter-spacing:.3em;margin-bottom:34px;color:#FFC46B}
+  #bill .sm{font-weight:400;font-size:31px;letter-spacing:.06em;color:rgba(242,238,230,.6);margin-top:30px;line-height:1.5}
+  #end{left:0;top:330px;width:1080px;text-align:center}
+  #end .a{font:700 74px/1.12 'Cinzel';letter-spacing:.06em}
+  #end .b{font:900 86px/1.12 'Cinzel';letter-spacing:.05em;color:#FFC46B;margin-top:26px}
+  #end .c{margin-top:70px;font:600 28px 'JetBrains Mono';color:rgba(242,238,230,.75)}
+  #end .d{margin-top:40px;display:inline-block;border:2px solid rgba(242,238,230,.8);padding:18px 34px;font:700 28px 'Inter';letter-spacing:.24em}
+  #end .e{margin-top:56px;font:500 22px 'Inter';letter-spacing:.06em;color:rgba(242,238,230,.5)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="world" class="abs">
+    <canvas id="cv" width="1080" height="1350"></canvas>
+    <canvas id="bloom" width="1080" height="1350"></canvas>
+    <div id="dom" class="abs" style="width:1080px;height:1350px"></div>
+  </div>
+  <div id="vig" class="abs"></div>
+  <canvas id="grain" class="abs" width="540" height="675"></canvas>
+  <div id="flash" class="abs"></div>
+  <div id="barT" class="abs bar"></div><div id="barB" class="abs bar"></div>
+  <div id="topTxt" class="abs">OPENAI RESPONSES API · MULTI-AGENT</div>
+  <div id="prog" class="abs"><i></i></div>
+</div>
+<script>
+// ===== helpers (all motion is a pure function of t) =====
+const $ = id => document.getElementById(id);
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const P = (t, a, b) => cl((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const oC = k => 1 - Math.pow(1 - k, 3), iC = k => k * k * k;
+const ioC = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const oE = k => k >= 1 ? 1 : 1 - Math.pow(2, -10 * k);
+const iE = k => k <= 0 ? 0 : Math.pow(2, 10 * k - 10);
+const env = (t, a, b, fi = .3, fo = .3) => Math.min(P(t, a, a + fi), 1 - P(t, b - fo, b));
+function S(el, o = {}) {
+  const x = o.x ?? 0, y = o.y ?? 0, s = o.s ?? 1, op = o.o ?? 1;
+  el.style.transform = `translate(${x}px,${y}px) scale(${s})${o.sx ? ` scaleX(${o.sx})` : ''}`;
+  el.style.opacity = op; el.style.visibility = op <= .002 ? 'hidden' : 'visible';
+  el.style.filter = o.b ? `blur(${o.b}px)` : 'none';
+}
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function el(html, cls = 'abs', css = '') { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; d.style.cssText = css; $('dom').appendChild(d); return d; }
+const DUR = 34, CX = 540, CY = 640;
+const cv = $('cv'), g = cv.getContext('2d'), bl = $('bloom'), bg = bl.getContext('2d');
+
+// glow sprites
+const COL = { w: [255, 246, 230], c: [120, 200, 255], v: [170, 140, 255], a: [255, 196, 107], r: [255, 80, 70], gr: [185, 242, 124] };
+const SPR = {};
+for (const [k, [r, gg, b]] of Object.entries(COL)) {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+  const gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, `rgba(255,255,255,1)`); gr.addColorStop(.12, `rgba(${r},${gg},${b},.9)`); gr.addColorStop(.4, `rgba(${r},${gg},${b},.25)`); gr.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+  x.fillStyle = gr; x.fillRect(0, 0, 128, 128); SPR[k] = c;
+}
+function glow(x, y, size, col = 'w', a = 1) { if (a <= 0 || size <= 0) return; g.globalAlpha = cl(a); g.drawImage(SPR[col], x - size / 2, y - size / 2, size, size); }
+function line(x1, y1, x2, y2, col, w, a) { const [r, gg, b] = COL[col]; g.strokeStyle = `rgba(${r},${gg},${b},${cl(a)})`; g.lineWidth = w; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
+
+// ===== dust field (3D flythrough) =====
+const R0 = rng(3), DUST = Array.from({ length: 650 }, () => ({ x: (R0() - .5) * 3400, y: (R0() - .5) * 3600, z: R0() * 4000, s: .4 + R0() * 1.2, c: R0() < .15 ? 'a' : (R0() < .3 ? 'c' : 'w') }));
+// camera z as integral of speed (closed form per segment, deterministic)
+const SPD = [[0, 140], [5.0, 0], [5.3, 2600], [6.6, 120], [8.6, 260], [11.5, 1900], [14.5, 300], [18.0, 180], [20.5, 400], [23.4, 60], [34, 60]];
+function camZ(t) { let z = 0; for (let i = 0; i < SPD.length - 1; i++) { const [a, v] = SPD[i], b = SPD[i + 1][0]; if (t <= a) break; z += v * (Math.min(t, b) - a); } return z; }
+function dust(t, alpha, pull = 0) {
+  if (alpha <= 0) return;
+  const cz = camZ(t), vNow = (camZ(t + 1 / 60) - cz) * 60;
+  g.globalCompositeOperation = 'lighter';
+  for (const p of DUST) {
+    let z = ((p.z - cz) % 4000 + 4000) % 4000 + 20;
+    const f = 900 / z; let X = CX + p.x * f, Y = CY + p.y * f;
+    if (pull > 0) { const a = Math.atan2(Y - CY, X - CX) + pull * 5, r = Math.hypot(X - CX, Y - CY) * Math.pow(1 - pull, 2); X = CX + Math.cos(a) * r; Y = CY + Math.sin(a) * r; }
+    if (X < -50 || X > 1130 || Y < -50 || Y > 1400) continue;
+    const a = alpha * cl(1.2 - z / 4000) * (pull > 0 ? 1 + pull : 1);
+    const streak = Math.min(220, vNow * 900 / (z * z) * 9);
+    if (streak > 2) { const k = streak / Math.hypot(X - CX, Y - CY + .01); line(X, Y, X - (X - CX) * k * .5, Y - (Y - CY) * k * .5, p.c, p.s * f * 2.2 + .6, a * .8); }
+    glow(X, Y, (6 + p.s * 12) * f * 2.2 + 2.5, p.c, a * .75);
+  }
+}
+
+// ===== 3D tree =====
+const TREE = [
+  { id: 'root', lab: '/root', p: [0, -300, 0], c: 'a', par: -1, t0: 0 },
+  { id: 'res', lab: '/root/researcher', p: [-360, 130, -160], c: 'c', par: 0, t0: .15 },
+  { id: 'cod', lab: '/root/coder', p: [0, 200, 170], c: 'v', par: 0, t0: .3 },
+  { id: 'rev', lab: '/root/reviewer', p: [370, 120, -90], c: 'gr', par: 0, t0: .45 },
+  { id: 'doc', lab: '/root/researcher/docs', p: [-300, 400, 120], c: 'c', par: 1, t0: 1.1 },
+];
+function proj3(p, yaw, pitch, D) {
+  let [x, y, z] = p; const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  [x, z] = [x * cy - z * sy, x * sy + z * cy];
+  const cp = Math.cos(pitch), sp = Math.sin(pitch); [y, z] = [y * cp - z * sp, y * sp + z * cp];
+  z += D; const f = 900 / z; return [CX + x * f, CY + y * f, f];
+}
+const labEls = TREE.map(n => el(`${n.lab}`, 'abs lab', 'transform-origin:0 0'));
+function tree(t, T0, alpha, opts = {}) {
+  const lt = t - T0; const yaw = -.55 + lt * .16, pitch = .12, D = 1000 - lt * 40;
+  const pos = TREE.map(n => {
+    const k = n.par < 0 ? 1 : oE(P(lt, n.t0, n.t0 + .7));
+    const par = n.par < 0 ? n.p : TREE[n.par].p;
+    let p = [lerp(par[0], n.p[0], k), lerp(par[1], n.p[1], k), lerp(par[2], n.p[2], k)];
+    if (opts.collapse) { const c = ioC(opts.collapse); p = p.map((v, i) => lerp(v, [0, 0, 0][i], c)); }
+    return { p, k, s: proj3(p, yaw, pitch, D) };
+  });
+  g.globalCompositeOperation = 'lighter';
+  TREE.forEach((n, i) => { if (n.par < 0) return; const a = pos[n.par].s, b = pos[i].s; const k = pos[i].k; if (k <= 0) return;
+    for (const [w, al] of [[10, .08], [4, .25], [1.6, .9]]) line(a[0], a[1], b[0], b[1], n.c, w, al * alpha);
+    // packet travelling down the filament
+    const q = ((lt * .8 + i * .27) % 1); glow(lerp(a[0], b[0], q), lerp(a[1], b[1], q), 34, 'w', alpha * .8 * k);
+  });
+  TREE.forEach((n, i) => { const s = pos[i].s; const k = n.par < 0 ? 1 : P(lt, n.t0, n.t0 + .15); const pulse = 1 + .08 * Math.sin(lt * 6 + i);
+    glow(s[0], s[1], (n.par < 0 ? 520 : 300) * s[2] * pulse, n.c, alpha * k * .9); glow(s[0], s[1], (n.par < 0 ? 120 : 70) * s[2], 'w', alpha * k);
+    // spawn burst
+    const sb = P(lt, n.t0, n.t0 + .5); if (sb > 0 && sb < 1 && n.par >= 0) for (let j = 0; j < 14; j++) { const an = j / 14 * Math.PI * 2 + i, r = oE(sb) * 160 * s[2]; glow(s[0] + Math.cos(an) * r, s[1] + Math.sin(an) * r, 20, n.c, alpha * (1 - sb)); }
+  });
+  TREE.forEach((n, i) => { const s = pos[i].s; const la = alpha * (opts.labels ?? 1) * P(lt, n.t0 + .35, n.t0 + .6);
+    const sc = cl(s[2] * 1.15, .8, 1.25), w = labEls[i].offsetWidth * sc, an = { cod: 'b', rev: 'a' }[n.id] || 'r';
+    let x = an === 'r' ? s[0] + 38 * s[2] : s[0] - w / 2, y = an === 'r' ? s[1] - 22 : (an === 'b' ? s[1] + 46 * s[2] : s[1] - 46 * s[2] - 44);
+    x = cl(x, 30, 1050 - w);
+    S(labEls[i], { x, y, o: la, s: sc }); });
+  return pos;
+}
+function hideLabs() { labEls.forEach(e => S(e, { o: 0 })); }
+
+// ===== cards =====
+function card(txt, cls, top) { return el(txt, 'abs card ' + cls, `top:${top}px`); }
+const CARDS = [
+  // [el, start, end, style]  style: 'soft' (trailer fade + tracking) or 'hit' (instant, aberration)
+  [card('EVERY AGENT', 'md ca', 900), 0, 1.75, 'soft0'],
+  [card('HAS WORKED ALONE.', 'md ca', 900), 1.75, 3.4, 'soft'],
+  [card('ONE TASK AT A TIME.', 'md ca', 900), 3.4, 5.0, 'soft'],
+  [card('UNTIL NOW.', 'lg', 560), 5.3, 6.6, 'hit'],
+  [card('ONE REQUEST.', 'md ca', 1010), 8.75, 10.15, 'soft'],
+  [card('A WHOLE TEAM.', 'md ca', 1010), 10.15, 11.5, 'soft'],
+  [card('IN PARALLEL.', 'md ca', 190), 11.6, 14.45, 'soft'],
+  [card('EVERY MOVE.', 'md ca', 190), 18.0, 20.45, 'soft'],
+  [card('ON THE RECORD.', 'md ca', 1090), 18.4, 20.45, 'soft'],
+  [card('INTO ONE ANSWER.', 'md ca', 900), 21.0, 22.75, 'soft'],
+];
+function cards(t) {
+  for (const [e, a, b, st] of CARDS) {
+    if (t < a - .01 || t > b) { S(e, { o: 0 }); continue; }
+    if (st === 'hit') {
+      const k = P(t, a, a + .5), out = P(t, b - .15, b);
+      e.style.textShadow = `${-14 * (1 - k)}px 0 rgba(255,60,60,${.8 * (1 - k)}),${14 * (1 - k)}px 0 rgba(60,200,255,${.8 * (1 - k)}),0 0 60px rgba(255,220,180,.4)`;
+      S(e, { s: lerp(1.25, 1, oE(P(t, a, a + .25))) + (t - a) * .03, o: 1 - out, b: out * 10 });
+    } else {
+      const fi = st === 'soft0' ? 1 : oC(P(t, a, a + .45)), fo = P(t, b - .3, b);
+      e.style.letterSpacing = `${lerp(.2, .1, oC(st === 'soft0' ? P(t, -.5, 1.2) : P(t, a, a + 1.2)))}em`;
+      S(e, { s: 1 + (t - a) * .02, o: fi * (1 - fo), b: (1 - fi) * 12 + fo * 8 });
+    }
+  }
+}
+
+// ===== scene: orbiting task ring (0-5) =====
+const TASKS = ['research', 'write code', 'run tests', 'review', 'fix bugs', 'write docs', 'summarize', 'deploy'];
+const taskEls = TASKS.map(s => el(s, 'abs mono', "font:600 30px 'JetBrains Mono';color:rgba(242,238,230,.85);white-space:nowrap;text-shadow:0 0 12px rgba(255,196,107,.5)"));
+function solo(t) {
+  const a = 1 - P(t, 4.85, 5.0);
+  if (a <= 0) { taskEls.forEach(e => S(e, { o: 0 })); return; }
+  const pulse = 1 + .1 * Math.max(0, Math.sin(t * Math.PI * 2 / .75)) ** 6;
+  g.globalCompositeOperation = 'lighter';
+  glow(CX, CY, 620 * pulse * (1 + t * .03), 'a', .55 * a); glow(CX, CY, 190 * pulse, 'w', a);
+  // only one task is lit at a time; the rest wait in orbit
+  const speed = lerp(.35, 1.4, iC(P(t, 2.5, 5))), ang0 = t * speed + .5 * iC(P(t, 2.5, 5)) * 3;
+  const tight = lerp(1, .72, ioC(P(t, 3.4, 5)));
+  const active = Math.floor(t / .62) % TASKS.length;
+  TASKS.forEach((s, i) => {
+    const an = ang0 + i / TASKS.length * Math.PI * 2;
+    const p = [Math.cos(an) * 400 * tight, Math.sin(an) * 70 * tight - 10, Math.sin(an) * 400 * tight];
+    const [X, Y, f] = proj3(p, 0, -.25, 1300);
+    const isA = i === active && t > .6;
+    glow(X, Y, 60 * f, isA ? 'a' : 'c', a * (isA ? .9 : .35));
+    const e = taskEls[i]; e.style.color = isA ? '#FFC46B' : 'rgba(242,238,230,.7)';
+    S(e, { x: X - 70 * f, y: Y + 18 * f, s: f * 1.1, o: a * P(t, .1 + i * .05, .4 + i * .05) * (f > .66 ? 1 : .55) });
+  });
+}
+
+// ===== scene: code reveal (6.6-8.6) =====
+const codeEl = el('', 'abs'); codeEl.id = 'code';
+const capEl = el('ONE FLAG', 'abs'); capEl.id = 'codeCap';
+const CODE = 'multi_agent: { "enabled": true }';
+function codeScene(t) {
+  const on = t >= 6.55 && t < 8.75;
+  if (!on) { S(codeEl, { o: 0 }); S(capEl, { o: 0 }); return; }
+  const n = Math.floor(cl((t - 6.7) / .95) * CODE.length);
+  const s = CODE.slice(0, n);
+  codeEl.innerHTML = s.replace('multi_agent', '<span class="k">multi_agent</span>').replace('"enabled"', '<span class="s">"enabled"</span>').replace(/true$/, '<span class="t">true</span>') + (t < 7.75 && Math.floor(t * 6) % 2 ? '▍' : (t < 7.75 ? ' ' : ''));
+  const sw = P(t, 7.75, 8.25);
+  codeEl.style.textShadow = sw > 0 && sw < 1 ? `0 0 ${30 * Math.sin(sw * Math.PI)}px rgba(255,196,107,.9)` : 'none';
+  S(codeEl, { o: env(t, 6.55, 8.75, .2, .3), s: 1 + (t - 6.6) * .015 });
+  S(capEl, { o: env(t, 7.9, 8.75, .3, .3), y: (1 - oC(P(t, 7.9, 8.3))) * 20 });
+  // shockwave from the word "true"
+  const k = P(t, 7.85, 8.75);
+  if (k > 0 && k < 1) { g.globalCompositeOperation = 'lighter'; const X = 880, Y = 628;
+    for (const [d, c] of [[0, 'a'], [.12, 'w']]) { const kk = cl(k - d); g.strokeStyle = `rgba(${COL[c].join(',')},${(1 - kk) * .8})`; g.lineWidth = 6 * (1 - kk) + 1; g.beginPath(); g.arc(X, Y, oE(kk) * 900, 0, Math.PI * 2); g.stroke(); }
+    glow(X, Y, 500 * (1 - k), 'a', 1 - k); }
+}
+
+// ===== scene: parallel lanes (11.5-14.5) =====
+const LANES = [{ x: -330, c: 'c', lab: '/root/researcher', d: 1.6 }, { x: 0, c: 'v', lab: '/root/coder', d: 2.1 }, { x: 330, c: 'gr', lab: '/root/reviewer', d: 1.85 }];
+const R1 = rng(9); const STREAKS = LANES.map(() => Array.from({ length: 70 }, () => ({ z: R1() * 3000, jx: (R1() - .5) * 120, jy: (R1() - .5) * 90, len: 120 + R1() * 260 })));
+const laneEls = LANES.map((L, i) => el(`<div class="p">${L.lab.replace('/root/', '')}</div><div class="st"></div>`, 'abs laneLab'));
+const hud = el('max_concurrent_subagents <span style="color:#FFC46B">= 3</span>', 'abs'); hud.id = 'hud';
+function lanes(t) {
+  const a = env(t, 11.4, 14.6, .25, .3);
+  if (a <= 0) { laneEls.forEach(e => S(e, { o: 0 })); S(hud, { o: 0 }); return; }
+  g.globalCompositeOperation = 'lighter';
+  const cz = (t - 11.5) * 2200;
+  LANES.forEach((L, i) => {
+    for (const s of STREAKS[i]) {
+      const z = ((s.z - cz) % 3000 + 3000) % 3000 + 60;
+      const p1 = [L.x + s.jx, 260 + s.jy], f1 = 900 / z, f2 = 900 / (z + s.len);
+      const X1 = CX + p1[0] * f1, Y1 = CY - 80 + p1[1] * f1, X2 = CX + p1[0] * f2, Y2 = CY - 80 + p1[1] * f2;
+      line(X1, Y1, X2, Y2, L.c, 3 * f1 + .5, a * cl(1.3 - z / 3000)); glow(X1, Y1, 26 * f1 + 4, L.c, a * .6);
+    }
+    const pr = P(t, 11.9, 11.9 + L.d);
+    const e = laneEls[i]; e.querySelector('.st').textContent = pr >= 1 ? '✓ done' : `${Math.floor(pr * 100)}%`;
+    e.querySelector('.st').style.color = pr >= 1 ? '#B9F27C' : '';
+    e.querySelector('.p').style.color = `rgb(${COL[L.c].join(',')})`;
+    S(e, { x: 390 + [-330, 0, 330][i], y: 900, o: a });
+  });
+  glow(CX, CY - 80, 260, 'w', a * .5);
+  S(hud, { o: a * P(t, 12.4, 12.7), y: (1 - oC(P(t, 12.4, 12.8))) * 20 });
+}
+
+// ===== scene: six moves (14.5-18) =====
+const MOVES = [['SPAWN', 'spawn_agent', 'a'], ['MESSAGE', 'send_message', 'c'], ['FOLLOW UP', 'followup_task', 'v'], ['WAIT', 'wait_agent', 'w'], ['INTERRUPT', 'interrupt_agent', 'r'], ['LIST', 'list_agents', 'gr']];
+const mvW = el('', 'abs'); mvW.id = 'mvW'; const mvC = el('', 'abs mono'); mvC.id = 'mvC'; const mvN = el('', 'abs'); mvN.id = 'mvN';
+const M0 = 14.6, MD = .56;
+function moves(t) {
+  if (t < M0 - .05 || t >= M0 + MD * 6) { S(mvW, { o: 0 }); S(mvC, { o: 0 }); S(mvN, { o: 0 }); return; }
+  const i = cl(Math.floor((t - M0) / MD), 0, 5), lt = t - M0 - i * MD, k = P(lt, 0, MD);
+  const [w, c, col] = MOVES[i];
+  mvW.textContent = w; mvC.textContent = c; mvN.textContent = `HOSTED ACTION ${i + 1} / 6`;
+  const hit = 1 - P(lt, 0, .3);
+  mvW.style.textShadow = `${-10 * hit}px 0 rgba(255,60,60,${.7 * hit}),${10 * hit}px 0 rgba(60,200,255,${.7 * hit})`;
+  S(mvW, { s: lerp(1.15, 1, oE(P(lt, 0, .2))) + lt * .05, o: 1 - P(lt, MD - .08, MD) * (i < 5 ? 1 : 0) });
+  S(mvC, { o: P(lt, .06, .16) * (1 - P(lt, MD - .08, MD) * (i < 5 ? 1 : 0)) });
+  S(mvN, { o: 1 });
+  // per-move graphic, centred above the word
+  g.globalCompositeOperation = 'lighter';
+  const X = CX, Y = 520, e = oE(k);
+  if (i === 0) { glow(X, Y, 240, 'a', 1 - k * .5); for (let j = 0; j < 28; j++) { const an = j / 28 * Math.PI * 2; line(X + Math.cos(an) * 60 * e, Y + Math.sin(an) * 60 * e, X + Math.cos(an) * 320 * e, Y + Math.sin(an) * 320 * e, 'a', 3, 1 - k); } for (let j = 0; j < 3; j++) { const an = -Math.PI / 2 + (j - 1) * .9; glow(X + Math.cos(an) * 260 * e, Y + Math.sin(an) * 200 * e + 120, 90, 'a', 1); } }
+  if (i === 1) { glow(X - 330, Y, 150, 'c', 1); glow(X + 330, Y, 150, 'c', 1); line(X - 330, Y, X + 330, Y, 'c', 3, .5); const q = ioC(P(lt, .05, .45)); glow(lerp(X - 330, X + 330, q), Y, 110, 'w', 1); line(lerp(X - 330, X + 330, Math.max(0, q - .2)), Y, lerp(X - 330, X + 330, q), Y, 'w', 8, .9); }
+  if (i === 2) { for (let j = 0; j < 4; j++) { const ox = X - 300 + j * 170 + e * 60, a = cl(1.2 - Math.abs(j - k * 4) * .5); g.lineCap = 'round'; for (const [w, al] of [[16, .15], [6, .9]]) { const [r, gg, b] = COL.v; g.strokeStyle = `rgba(${r},${gg},${b},${Math.min(1, al * a * 1.6 + .15)})`; g.lineWidth = w; g.beginPath(); g.moveTo(ox, Y - 90); g.lineTo(ox + 80, Y); g.lineTo(ox, Y + 90); g.stroke(); } } }
+  if (i === 3) { g.lineCap = 'round'; for (let j = 0; j < 12; j++) { const an = j / 12 * Math.PI * 2 + lt * 2.5; const lit = j / 12 < k; for (const [w, al] of [[14, .12], [6, .9]]) { g.strokeStyle = `rgba(255,246,230,${al * (lit ? 1 : .4)})`; g.lineWidth = w; g.beginPath(); g.arc(X, Y, 200, an, an + .38); g.stroke(); } } glow(X, Y, 160, 'w', .5); }
+  if (i === 4) { const s = oE(P(lt, 0, .18)); for (const [w, al] of [[40, .15], [10, 1]]) line(X - 300 * s, Y + 220 * s, X + 300 * s, Y - 220 * s, 'r', w, al); glow(X, Y, 420, 'r', .6 * (1 - k)); for (let j = 0; j < 16; j++) { const an = j * 2.4, r = e * (140 + j * 12); glow(X + Math.cos(an) * r, Y + Math.sin(an) * r, 18, 'r', 1 - k); } }
+  if (i === 5) { for (let r = 0; r < 5; r++) for (let c = 0; c < 9; c++) { const px = X - 360 + c * 90, py = Y - 160 + r * 80; const scan = Math.abs(py - lerp(Y - 200, Y + 200, k)) < 40; glow(px, py, scan ? 70 : 34, scan ? 'gr' : 'w', scan ? 1 : .35); } }
+}
+
+// ===== scene: the record (18-20.5) =====
+const rec = el(`<div class="row">multi_agent_call <span class="tag">NEW</span></div><div class="row">multi_agent_call_output <span class="tag">NEW</span></div><div class="row">agent_message 🔒 <span class="tag">NEW</span></div><div class="row" style="color:#FFC46B">message · phase: "final_answer"</div>`, 'abs'); rec.id = 'rec';
+const R2 = rng(17); const RAIN = Array.from({ length: 90 }, () => ({ x: R2() * 1080, sp: 300 + R2() * 600, o: R2() * 2000, l: 60 + R2() * 200 }));
+function record(t) {
+  const a = env(t, 17.95, 20.5, .25, .3);
+  if (a <= 0) { S(rec, { o: 0 }); return; }
+  g.globalCompositeOperation = 'lighter';
+  for (const d of RAIN) { const y = ((d.o + t * d.sp) % 1600) - 150; line(d.x, y, d.x, y - d.l, 'c', 2, a * .35); glow(d.x, y, 14, 'c', a * .7); }
+  S(rec, { o: a });
+  [...rec.children].forEach((r, i) => { const k = oE(P(t, 18.3 + i * .3, 18.7 + i * .3)); r.style.opacity = k; r.style.transform = `translateY(${(1 - k) * 30}px)`;
+    const sw = P(t, 18.3 + i * .3, 18.9 + i * .3); r.style.textShadow = sw > 0 && sw < 1 ? `0 0 ${24 * Math.sin(sw * Math.PI)}px rgba(120,200,255,.9)` : '0 0 10px rgba(0,0,0,.8)'; });
+}
+
+// ===== scene: convergence (20.5-23) =====
+const R3 = rng(23); const SPIRAL = Array.from({ length: 520 }, () => ({ a: R3() * Math.PI * 2, r: 300 + R3() * 900, c: ['a', 'c', 'v', 'w'][Math.floor(R3() * 4)] }));
+function converge(t) {
+  if (t < 20.45 || t >= 23.0) return;
+  const a = P(t, 20.45, 20.8), k = iC(P(t, 20.6, 22.95));
+  g.globalCompositeOperation = 'lighter';
+  for (const p of SPIRAL) {
+    const f = (kk) => { const r = p.r * Math.pow(1 - kk, 1.6), an = p.a + kk * 7; return [CX + Math.cos(an) * r, CY + Math.sin(an) * r * .8]; };
+    const [x1, y1] = f(k), [x2, y2] = f(Math.max(0, k - .04));
+    line(x1, y1, x2, y2, p.c, 2.5, a * .7); glow(x1, y1, 22, p.c, a * .9);
+  }
+  glow(CX, CY, 200 + 1300 * iE(P(t, 21.5, 23.0)), 'w', a * (.4 + .6 * k));
+  glow(CX, CY, 900 * k, 'a', a * .6 * k);
+}
+
+// ===== title + bill + end =====
+const title = el(`<div class="w">MULTI<br>AGENT</div><div class="sub">OPENAI RESPONSES API</div><div class="beta"><i></i>NOW IN BETA<i></i></div>`, 'abs'); title.id = 'title';
+const bill = el(`<div class="h">THE CAST</div>
+<div class="l"><b>MULTI_AGENT.ENABLED</b> · ONE FLAG</div><div class="l"><b>/ROOT</b> AND ITS SUBAGENTS</div>
+<div class="l"><b>MAX_CONCURRENT_SUBAGENTS</b> · DEFAULT 3</div>
+<div class="l">SPAWN_AGENT · SEND_MESSAGE · FOLLOWUP_TASK</div>
+<div class="l">WAIT_AGENT · INTERRUPT_AGENT · LIST_AGENTS</div>
+<div class="l">MULTI_AGENT_CALL · AGENT_MESSAGE</div><div class="l">MULTI_AGENT_CALL_OUTPUT</div>
+<div class="l">FINAL ANSWER BY <b>/ROOT</b> · PHASE "FINAL_ANSWER"</div>
+<div class="sm">OPT IN · OPENAI-BETA: RESPONSES_MULTI_AGENT=V1<br>SERVER-SIDE COMPACTION · AUTOMATIC<br>NOT YET: REASONING.SUMMARY · MAX_TOOL_CALLS<br>/RESPONSES/COMPACT</div>`, 'abs'); bill.id = 'bill';
+const end = el(`<div class="a">STOP PROMPTING<br>AN AGENT.</div><div class="b">START DIRECTING<br>A TEAM.</div><div class="c">Docs → OpenAI API › Guides › Multi-agent</div><div class="d">SAVE THIS FOR YOUR NEXT BUILD</div><div class="e">Independent explainer · not affiliated with OpenAI · beta, details may change</div>`, 'abs'); end.id = 'end';
+function finale(t) {
+  // title drop
+  const ta = t >= 23.4 && t < 27.6 ? 1 - P(t, 27.2, 27.6) : 0;
+  S(title, { o: ta, s: 1.06 - .06 * oE(P(t, 23.4, 24.2)) + (t - 23.4) * .01, b: P(t, 27.2, 27.6) * 8 });
+  title.style.setProperty('--sw', `${lerp(-20, 130, P(t, 23.6, 25.4))}%`);
+  [...title.children].forEach((c, i) => { if (i) c.style.opacity = P(t, 24.0 + i * .35, 24.4 + i * .35); });
+  if (ta > 0) { g.globalCompositeOperation = 'lighter'; const fy = 614, fl = oE(P(t, 23.4, 23.9)) * (1 - P(t, 25, 27.2) * .6);
+    const grd = g.createLinearGradient(0, 0, 1080, 0); grd.addColorStop(0, 'rgba(120,200,255,0)'); grd.addColorStop(.5, `rgba(255,240,220,${.9 * fl * ta})`); grd.addColorStop(1, 'rgba(120,200,255,0)');
+    g.fillStyle = grd; g.globalAlpha = 1; g.fillRect(0, fy - 2, 1080, 4); g.globalAlpha = .35 * fl * ta; g.fillRect(0, fy - 22, 1080, 44); glow(CX, fy, 380, 'w', fl * ta); }
+  // billing block
+  const ba = env(t, 27.5, 30.6, .4, .3);
+  S(bill, { o: ba, y: -(t - 27.5) * 6 });
+  [...bill.children].forEach((c, i) => c.style.opacity = P(t, 27.6 + i * .12, 27.9 + i * .12));
+  // end card
+  const ea = P(t, 30.55, 30.9);
+  S(end, { o: ea, s: 1 + (t - 30.5) * .006 });
+  [...end.children].forEach((c, i) => { const k = oC(P(t, 30.6 + i * .3, 31.0 + i * .3)); c.style.opacity = k; c.style.transform = `translateY(${(1 - k) * 20}px)`; c.style.filter = `blur(${(1 - k) * 8}px)`; });
+}
+
+// ===== grain, flash, shake =====
+const gc = $('grain').getContext('2d'), gimg = gc.createImageData(540, 675);
+function grain(t) { const r = rng(Math.floor(t * 30) + 99); const d = gimg.data; for (let i = 0; i < d.length; i += 4) { const v = r() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; } gc.putImageData(gimg, 0, 0); }
+const HITS = [5.3, 8.6, 14.6, 15.16, 15.72, 16.28, 16.84, 17.4, 23.4, 30.5];
+function fx(t) {
+  let fl = 0, sh = 0;
+  for (const h of HITS) { const k = P(t, h, h + .45); if (t >= h && k < 1) { fl = Math.max(fl, (1 - k) ** 3 * (h === 5.3 || h === 23.4 ? .85 : .18)); sh = Math.max(sh, (1 - k) ** 2 * (h === 5.3 || h === 23.4 ? 22 : 9)); } }
+  fl = Math.max(fl, iE(P(t, 22.6, 23.0)) * (t < 23.0 ? 1 : 0));
+  $('flash').style.opacity = fl;
+  $('world').style.transform = `translate(${Math.sin(t * 91) * sh}px,${Math.cos(t * 77) * sh}px)`;
+}
+
+function render(t) {
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, 1080, 1350);
+  const black = (t >= 5.0 && t < 5.3) || (t >= 23.0 && t < 23.4);
+  if (!black) {
+    // dust everywhere, dimmed under text-heavy scenes, pulled into the convergence
+    const dA = t < 5 ? .9 : t < 6.6 ? 1 : t < 8.6 ? .45 : t < 11.5 ? .7 : t < 14.5 ? .25 : t < 18 ? .3 : t < 20.5 ? .2 : t < 23 ? .6 : t < 27.5 ? .55 : .35;
+    dust(t, dA, t >= 20.6 && t < 23 ? iC(P(t, 20.6, 22.95)) * .9 : 0);
+    solo(t);
+    codeScene(t);
+    if (t >= 8.55 && t < 11.5) tree(t, 8.6, env(t, 8.55, 11.5, .1, .3)); else hideLabs();
+    lanes(t); moves(t); record(t); converge(t);
+  } else { taskEls.forEach(e => S(e, { o: 0 })); hideLabs(); }
+  finale(t);
+  cards(t);
+  // bloom pass
+  bg.globalCompositeOperation = 'copy'; bg.filter = 'blur(18px)'; bg.globalAlpha = .9; bg.drawImage(cv, 0, 0); bg.filter = 'none';
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  grain(t); fx(t);
+  $('prog').firstChild.style.transform = `scaleX(${t / DUR})`;
+}
+window.render = render;
+window.ready = document.fonts.ready.then(() => { render(0); return true; });
+const q = new URLSearchParams(location.search);
+if (q.has('play')) { const t0 = performance.now(); (function loop() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })(); }
+</script>
+</body>
+</html>
