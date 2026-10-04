@@ -29,3 +29,12 @@ loudnorm `mix_raw.wav` to −14 LUFS (see the ffmpeg lines in the other folders)
 Measured: no frozen stretches, −15.0 LUFS integrated, 6.8 LU range (trailer dynamics), true peak −2.0 dBFS.
 Facts come from OpenAI's Multi-agent guide as quoted publicly (Oct 2026); it's a beta, so re-check before posting.
 The end card says it's an independent explainer, not affiliated with OpenAI; no OpenAI logos are used.
+
+## 45 s version with voiceover (`multi_agent_teaser_45s_voiceover.mp4`)
+The same teaser, re-timed around a narrated script so it's easy to follow:
+- Narration by Kokoro TTS (`af_heart` voice, an open-weight Apache-2.0 model), generated locally (`voiceover_tts.py`). Script in `VOICEOVER_SCRIPT.md`.
+- Burned-in subtitles in the bottom letterbox bar for muted viewers; also provided as `captions.srt`.
+- Picture is driven by a time-warp from the 45 s timeline onto the original choreography (`WARP` in `index.html`); the six action hits land on the spoken words "Spawn. Message. Follow up. Wait. Interrupt. List."
+- Score rebuilt for 45 s (`score45.py`); music ducks about 6 dB under speech and about 10 dB under the two lines spoken over the brass hits. Each line measures 6–16 dB above the music.
+- Measured: −14.2 LUFS integrated, true peak −1.9 dBFS; the only static moments are the two intentional black silences.
+- `*_light.mp4` is a smaller 24 MB encode for quick sharing.

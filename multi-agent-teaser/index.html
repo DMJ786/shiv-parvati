@@ -19,12 +19,14 @@
   .bar{left:0;width:1080px;height:118px;background:#000;z-index:5}
   #barT{top:0} #barB{top:1232px}
   #topTxt{left:0;top:48px;width:1080px;text-align:center;font:600 19px 'Inter';letter-spacing:.42em;color:rgba(242,238,230,.5);z-index:6}
-  #prog{left:340px;top:1286px;width:400px;height:2px;background:rgba(255,255,255,.12);z-index:6}
+  #cap{left:40px;top:1240px;width:1000px;height:84px;display:flex;align-items:center;justify-content:center;text-align:center;font:700 38px/1.18 'Inter';color:#F2EEE6;z-index:6;letter-spacing:-.005em}
+  #prog{left:340px;top:1334px;width:400px;height:2px;background:rgba(255,255,255,.12);z-index:6}
   #prog i{display:block;height:100%;background:rgba(242,238,230,.75);transform-origin:0 0}
 
   /* trailer cards */
   .card{left:0;width:1080px;text-align:center;font-family:'Cinzel',serif;font-weight:700;color:#F2EEE6;white-space:nowrap}
   .card.md{font-size:68px;letter-spacing:.1em}
+  .card.sm{font-size:44px;letter-spacing:.1em;color:rgba(242,238,230,.8)}
   .card.lg{font-size:124px;letter-spacing:.04em;font-weight:900}
   .ca{text-shadow:0 0 40px rgba(255,220,170,.25)}
   .mono{font-family:'JetBrains Mono',monospace}
@@ -75,8 +77,10 @@
   <div id="flash" class="abs"></div>
   <div id="barT" class="abs bar"></div><div id="barB" class="abs bar"></div>
   <div id="topTxt" class="abs">OPENAI RESPONSES API · MULTI-AGENT</div>
+  <div id="cap" class="abs"></div>
   <div id="prog" class="abs"><i></i></div>
 </div>
+<script src="vo.js"></script>
 <script>
 // ===== helpers (all motion is a pure function of t) =====
 const $ = id => document.getElementById(id);
@@ -96,7 +100,9 @@ function S(el, o = {}) {
 }
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function el(html, cls = 'abs', css = '') { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; d.style.cssText = css; $('dom').appendChild(d); return d; }
-const DUR = 34, CX = 540, CY = 640;
+const DUR = 45, CX = 540, CY = 640;
+const WARP = [[0, 0], [5.6, 5.0], [5.9, 5.3], [7.4, 6.6], [12.8, 8.6], [17.3, 11.5], [21.0, 14.5], [23.42, 15.0], [24.12, 15.5], [24.77, 16.0], [25.64, 16.5], [26.29, 17.0], [26.8, 17.5], [27.6, 18.0], [31.4, 20.5], [34.6, 23.0], [35.0, 23.4], [38.6, 27.5], [41.6, 30.5], [45, 34]];
+function warp(t) { for (let i = 1; i < WARP.length; i++) { const [n0, o0] = WARP[i - 1], [n1, o1] = WARP[i]; if (t <= n1) return o0 + (t - n0) / (n1 - n0) * (o1 - o0); } return 34; }
 const cv = $('cv'), g = cv.getContext('2d'), bl = $('bloom'), bg = bl.getContext('2d');
 
 // glow sprites
@@ -180,9 +186,12 @@ function hideLabs() { labEls.forEach(e => S(e, { o: 0 })); }
 function card(txt, cls, top) { return el(txt, 'abs card ' + cls, `top:${top}px`); }
 const CARDS = [
   // [el, start, end, style]  style: 'soft' (trailer fade + tracking) or 'hit' (instant, aberration)
-  [card('EVERY AGENT', 'md ca', 900), 0, 1.75, 'soft0'],
-  [card('HAS WORKED ALONE.', 'md ca', 900), 1.75, 3.4, 'soft'],
-  [card('ONE TASK AT A TIME.', 'md ca', 900), 3.4, 5.0, 'soft'],
+  [card('EVERY AGENT', 'md ca', 900), 0, 2.05, 'soft0'],
+  [card('HAS WORKED ALONE.', 'md ca', 900), 2.05, 3.17, 'soft'],
+  [card('ONE TASK AT A TIME.', 'md ca', 900), 3.17, 5.0, 'soft'],
+  [card('NEW IN THE RESPONSES API', 'sm ca', 440), 6.75, 8.55, 'soft'],
+  [card('THE API RUNS', 'md ca', 560), 14.5, 14.99, 'fast'],
+  [card('THE TEAMWORK.', 'md ca', 650), 14.53, 14.99, 'fast'],
   [card('UNTIL NOW.', 'lg', 560), 5.3, 6.6, 'hit'],
   [card('ONE REQUEST.', 'md ca', 1010), 8.75, 10.15, 'soft'],
   [card('A WHOLE TEAM.', 'md ca', 1010), 10.15, 11.5, 'soft'],
@@ -198,6 +207,9 @@ function cards(t) {
       const k = P(t, a, a + .5), out = P(t, b - .15, b);
       e.style.textShadow = `${-14 * (1 - k)}px 0 rgba(255,60,60,${.8 * (1 - k)}),${14 * (1 - k)}px 0 rgba(60,200,255,${.8 * (1 - k)}),0 0 60px rgba(255,220,180,.4)`;
       S(e, { s: lerp(1.25, 1, oE(P(t, a, a + .25))) + (t - a) * .03, o: 1 - out, b: out * 10 });
+    } else if (st === 'fast') {
+      const fi = oC(P(t, a, a + .07)), fo = P(t, b - .04, b);
+      S(e, { s: 1 + (t - a) * .1, o: fi * (1 - fo), b: (1 - fi) * 10 + fo * 8 });
     } else {
       const fi = st === 'soft0' ? 1 : oC(P(t, a, a + .45)), fo = P(t, b - .3, b);
       e.style.letterSpacing = `${lerp(.2, .1, oC(st === 'soft0' ? P(t, -.5, 1.2) : P(t, a, a + 1.2)))}em`;
@@ -237,15 +249,15 @@ const CODE = 'multi_agent: { "enabled": true }';
 function codeScene(t) {
   const on = t >= 6.55 && t < 8.75;
   if (!on) { S(codeEl, { o: 0 }); S(capEl, { o: 0 }); return; }
-  const n = Math.floor(cl((t - 6.7) / .95) * CODE.length);
+  const n = Math.floor(cl((t - 6.75) / 1.1) * CODE.length);
   const s = CODE.slice(0, n);
-  codeEl.innerHTML = s.replace('multi_agent', '<span class="k">multi_agent</span>').replace('"enabled"', '<span class="s">"enabled"</span>').replace(/true$/, '<span class="t">true</span>') + (t < 7.75 && Math.floor(t * 6) % 2 ? '▍' : (t < 7.75 ? ' ' : ''));
-  const sw = P(t, 7.75, 8.25);
+  codeEl.innerHTML = s.replace('multi_agent', '<span class="k">multi_agent</span>').replace('"enabled"', '<span class="s">"enabled"</span>').replace(/true$/, '<span class="t">true</span>') + (t < 8.2 && Math.floor(t * 4) % 2 ? '▍' : (t < 8.2 ? ' ' : ''));
+  const sw = P(t, 8.22, 8.55);
   codeEl.style.textShadow = sw > 0 && sw < 1 ? `0 0 ${30 * Math.sin(sw * Math.PI)}px rgba(255,196,107,.9)` : 'none';
   S(codeEl, { o: env(t, 6.55, 8.75, .2, .3), s: 1 + (t - 6.6) * .015 });
-  S(capEl, { o: env(t, 7.9, 8.75, .3, .3), y: (1 - oC(P(t, 7.9, 8.3))) * 20 });
+  S(capEl, { o: env(t, 8.25, 8.75, .12, .15), y: (1 - oC(P(t, 8.25, 8.4))) * 20 });
   // shockwave from the word "true"
-  const k = P(t, 7.85, 8.75);
+  const k = P(t, 8.25, 8.75);
   if (k > 0 && k < 1) { g.globalCompositeOperation = 'lighter'; const X = 880, Y = 628;
     for (const [d, c] of [[0, 'a'], [.12, 'w']]) { const kk = cl(k - d); g.strokeStyle = `rgba(${COL[c].join(',')},${(1 - kk) * .8})`; g.lineWidth = 6 * (1 - kk) + 1; g.beginPath(); g.arc(X, Y, oE(kk) * 900, 0, Math.PI * 2); g.stroke(); }
     glow(X, Y, 500 * (1 - k), 'a', 1 - k); }
@@ -257,7 +269,7 @@ const R1 = rng(9); const STREAKS = LANES.map(() => Array.from({ length: 70 }, ()
 const laneEls = LANES.map((L, i) => el(`<div class="p">${L.lab.replace('/root/', '')}</div><div class="st"></div>`, 'abs laneLab'));
 const hud = el('max_concurrent_subagents <span style="color:#FFC46B">= 3</span>', 'abs'); hud.id = 'hud';
 function lanes(t) {
-  const a = env(t, 11.4, 14.6, .25, .3);
+  const a = env(t, 11.4, 14.5, .25, .2);
   if (a <= 0) { laneEls.forEach(e => S(e, { o: 0 })); S(hud, { o: 0 }); return; }
   g.globalCompositeOperation = 'lighter';
   const cz = (t - 11.5) * 2200;
@@ -281,7 +293,7 @@ function lanes(t) {
 // ===== scene: six moves (14.5-18) =====
 const MOVES = [['SPAWN', 'spawn_agent', 'a'], ['MESSAGE', 'send_message', 'c'], ['FOLLOW UP', 'followup_task', 'v'], ['WAIT', 'wait_agent', 'w'], ['INTERRUPT', 'interrupt_agent', 'r'], ['LIST', 'list_agents', 'gr']];
 const mvW = el('', 'abs'); mvW.id = 'mvW'; const mvC = el('', 'abs mono'); mvC.id = 'mvC'; const mvN = el('', 'abs'); mvN.id = 'mvN';
-const M0 = 14.6, MD = .56;
+const M0 = 15.0, MD = .5;
 function moves(t) {
   if (t < M0 - .05 || t >= M0 + MD * 6) { S(mvW, { o: 0 }); S(mvC, { o: 0 }); S(mvN, { o: 0 }); return; }
   const i = cl(Math.floor((t - M0) / MD), 0, 5), lt = t - M0 - i * MD, k = P(lt, 0, MD);
@@ -364,7 +376,7 @@ function finale(t) {
 // ===== grain, flash, shake =====
 const gc = $('grain').getContext('2d'), gimg = gc.createImageData(540, 675);
 function grain(t) { const r = rng(Math.floor(t * 30) + 99); const d = gimg.data; for (let i = 0; i < d.length; i += 4) { const v = r() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; } gc.putImageData(gimg, 0, 0); }
-const HITS = [5.3, 8.6, 14.6, 15.16, 15.72, 16.28, 16.84, 17.4, 23.4, 30.5];
+const HITS = [5.3, 8.6, 15.0, 15.5, 16.0, 16.5, 17.0, 17.5, 23.4, 30.5];
 function fx(t) {
   let fl = 0, sh = 0;
   for (const h of HITS) { const k = P(t, h, h + .45); if (t >= h && k < 1) { fl = Math.max(fl, (1 - k) ** 3 * (h === 5.3 || h === 23.4 ? .85 : .18)); sh = Math.max(sh, (1 - k) ** 2 * (h === 5.3 || h === 23.4 ? 22 : 9)); } }
@@ -373,7 +385,16 @@ function fx(t) {
   $('world').style.transform = `translate(${Math.sin(t * 91) * sh}px,${Math.cos(t * 77) * sh}px)`;
 }
 
-function render(t) {
+// narration captions (new-time); filled from vo.json by the renderer
+const VO = window.VO || [];
+function captions(tn) {
+  let txt = '', op = 0;
+  for (const v of VO) for (const c of v.chunks) if (tn >= c.a - .05 && tn < c.b + .25) { txt = c.text; op = Math.min(P(tn, c.a - .05, c.a + .05), 1 - P(tn, c.b + .1, c.b + .25)); }
+  const e = $('cap'); if (e.textContent !== txt) e.textContent = txt; e.style.opacity = op;
+}
+function render(tn) {
+  const t = warp(tn);
+  captions(tn);
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.fillStyle = '#000'; g.fillRect(0, 0, 1080, 1350);
   const black = (t >= 5.0 && t < 5.3) || (t >= 23.0 && t < 23.4);
   if (!black) {
@@ -391,7 +412,7 @@ function render(t) {
   bg.globalCompositeOperation = 'copy'; bg.filter = 'blur(18px)'; bg.globalAlpha = .9; bg.drawImage(cv, 0, 0); bg.filter = 'none';
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   grain(t); fx(t);
-  $('prog').firstChild.style.transform = `scaleX(${t / DUR})`;
+  $('prog').firstChild.style.transform = `scaleX(${tn / DUR})`;
 }
 window.render = render;
 window.ready = document.fonts.ready.then(() => { render(0); return true; });

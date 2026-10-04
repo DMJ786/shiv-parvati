@@ -1,7 +1,7 @@
 import { chromium } from 'playwright-core';
 import { spawn } from 'node:child_process';
 const [,, mode='video', arg1='', arg2=''] = process.argv;
-const FPS = +(process.env.FPS || 30), DUR = 34;
+const FPS = +(process.env.FPS || 30), DUR = 45;
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args:['--force-color-profile=srgb','--font-render-hinting=none'] });
 const page = await browser.newPage({ viewport: { width: 1080, height: 1350 }, deviceScaleFactor: 1 });
 page.on('pageerror', e => console.error('PAGEERR', e.message));

@@ -1,0 +1,71 @@
+1
+00:00:00,400 --> 00:00:02,550
+Every AI agent you've built…
+
+2
+00:00:02,350 --> 00:00:03,750
+has worked alone.
+
+3
+00:00:03,550 --> 00:00:05,220
+One task, at a time.
+
+4
+00:00:06,050 --> 00:00:07,060
+Until now.
+
+5
+00:00:07,600 --> 00:00:11,750
+OpenAI's Responses API now has Multi-agent.
+
+6
+00:00:11,550 --> 00:00:12,800
+Flip one flag…
+
+7
+00:00:12,900 --> 00:00:17,220
+and the model spawns its own team of subagents, under one root agent.
+
+8
+00:00:17,450 --> 00:00:18,940
+They work in parallel.
+
+9
+00:00:18,740 --> 00:00:20,940
+Up to three at a time, by default.
+
+10
+00:00:21,100 --> 00:00:23,550
+The API runs the teamwork for you.
+
+11
+00:00:23,350 --> 00:00:27,540
+Spawn. Message. Follow up. Wait. Interrupt. List.
+
+12
+00:00:27,750 --> 00:00:31,390
+Every step is recorded in the response, so you see who did what.
+
+13
+00:00:31,500 --> 00:00:34,480
+Then the root agent merges it all into one answer.
+
+14
+00:00:35,700 --> 00:00:36,910
+Multi-agent.
+
+15
+00:00:36,710 --> 00:00:37,920
+Now in beta.
+
+16
+00:00:38,900 --> 00:00:41,130
+Check the docs for what's supported today.
+
+17
+00:00:41,750 --> 00:00:43,470
+Stop prompting an agent.
+
+18
+00:00:43,270 --> 00:00:44,930
+Start directing a team.
