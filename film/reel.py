@@ -40,8 +40,10 @@ TREATMENT = {
     "09": {"push": 0.07, "punch": 0.10},
     "10": {"push": 0.10, "jump": (1.45, (0.62, 0.42))},
     "11": {"push": 0.08, "punch": 0.12, "shake": 5},
-    "12": {"push": 0.05, "punch": 0.08, "jump": (1.4, "eyes")},
-    "13": {"push": 0.08, "punch": 0.20, "flash": True, "shake": 14},
+    # 12 -> 13 plays as one continuous push-in on Shiva's face: no jump, punch, flash or shake; 13 picks up the
+    # exact zoom and face position where 12 ends (measured), and a soft golden glow blooms as his eyes open.
+    "12": {"push": 0.14, "point": "eyes"},
+    "13": {"push": 0.08, "continue": True, "glow": True},
     "14": {"push": 0.05},              # after the eyes open: slow push-ins only, nothing on the beat
     "15": {"push": -0.08},            # slow pull-back reveal
 }
@@ -82,20 +84,44 @@ def subject_points(src, cuts):
 
 
 # ---------------------------------------------------------------- camera curve
-def camera(cuts, beats, bell, pts):
-    """Per-frame (zoom, cx, cy, flash, shake_px) for the whole film, keyed to the cut plan."""
+def continuity(src, cuts, into="13"):
+    """Face box (x, y, w) normalised, on the last frame before the cut into `into` and on the first frame after it."""
+    from film.face import _detect
+    k = next(i for i, c in enumerate(cuts) if c["id"] == into)
+    f = round(cuts[k]["start"] * FPS)
+    w, h = map(int, subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                                    "stream=width,height", "-of", "csv=p=0", str(src)],
+                                   capture_output=True, text=True, check=True).stdout.strip().split(","))
+    out = []
+    for idx in (f - 1, f):
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(src), "-vf", f"select=eq(n\\,{idx})", "-frames:v", "1",
+                              "-f", "rawvideo", "-pix_fmt", "bgr24", "-"], capture_output=True, check=True).stdout
+        im = np.frombuffer(raw, np.uint8).reshape(h, w, 3)
+        found, pad = _detect(im)
+        b = found[0].bbox - pad
+        out.append(((b[0] + b[2]) / 2 / w, (b[1] + b[3]) / 2 / h, (b[2] - b[0]) / w))
+    return {"before": out[0], "after": out[1]}
+
+
+def camera(cuts, beats, bell, pts, cont=None):
+    """Per-frame (zoom, cx, cy, flash, shake_px, glow) for the whole film, keyed to the cut plan."""
     n = round(cuts[-1]["end"] * FPS) + 400
     z = np.ones(n)
     cx, cy = np.full(n, 0.5), np.full(n, 0.5)
-    flash, shake = np.zeros(n), np.zeros(n)
-    prev_end_z = 1.0
+    flash, shake, glow = np.zeros(n), np.zeros(n), np.zeros(n)
+    prev_end_z, prev_centre = 1.0, (0.5, 0.5)
     for k, c in enumerate(cuts):
         sid, tr = c["id"], TREATMENT.get(c["id"], {})
         a, b = round(c["start"] * FPS), round(c["end"] * FPS)
         dis_in = k > 0 and cuts[k - 1]["dissolve_out"]
         z0 = max(prev_end_z, 1.0 + max(0.0, -tr.get("push", 0))) if dis_in else 1.0 + max(0.0, -tr.get("push", 0))
+        centre = pts[sid]["eyes"] if tr.get("point") == "eyes" else pts[sid]["centre"]
+        if tr.get("continue") and cont:
+            # Match cut: same face size and screen position as the last frame of the previous shot.
+            (bx, by, bw), (ax, ay, aw) = cont["before"], cont["after"]
+            z0 = prev_end_z * bw / aw
+            centre = (ax - (bx - prev_centre[0]) * prev_end_z / z0, ay - (by - prev_centre[1]) * prev_end_z / z0)
         z1 = z0 + tr.get("push", 0)
-        centre = pts[sid]["centre"]
         jump_at, jump = None, tr.get("jump")
         if jump:
             mid = (c["start"] + c["end"]) / 2
@@ -113,7 +139,9 @@ def camera(cuts, beats, bell, pts):
                 if p and i - a < 6:
                     zz += p * (1 - ease((i - a) / 6))
             z[i], cx[i], cy[i] = zz, x, y
-        prev_end_z = z1
+        prev_end_z, prev_centre = z1, centre
+        if tr.get("glow"):
+            glow[a:a + 30] = [0.45 * min(1.0, (j + 1) / 4) * np.exp(-max(0, j - 3) / 9) for j in range(30)]
         if tr.get("flash"):
             flash[a:a + 3] = [0.9, 0.55, 0.2]
         if tr.get("shake"):
@@ -140,7 +168,14 @@ def camera(cuts, beats, bell, pts):
     card = round(cuts[-1]["end"] * FPS)
     z[card:] = 1.0
     cx[card:], cy[card:] = 0.5, 0.5
-    return z, cx, cy, flash, shake
+    return z, cx, cy, flash, shake, glow
+
+
+def bloom(frame, alpha):
+    """Soft warm-gold light bloom added over the frame (alpha 0-1)."""
+    soft = cv2.GaussianBlur(frame, (0, 0), 24).astype(np.float32)
+    soft *= np.array([0.45, 0.78, 1.0], np.float32)          # BGR tint: gold
+    return np.clip(frame.astype(np.float32) + soft * alpha, 0, 255).astype(np.uint8)
 
 
 def warp(frame, zoom, cx, cy, shake_px=0.0, rng=None, out=(FW, FH)):
@@ -258,7 +293,7 @@ def render(out, src=None):
     beats = info["beats"]
     film_frames = round(edit.duration(src) * FPS)
     pts = subject_points(src, cuts)
-    z, cx, cy, flash, shake = camera(cuts, beats, bell, pts)
+    z, cx, cy, flash, shake, glow = camera(cuts, beats, bell, pts, cont=continuity(src, cuts))
     rng = np.random.default_rng(7)
 
     video = BUILD / "reel_video.mp4"
@@ -317,6 +352,8 @@ def render(out, src=None):
         frame = warp(fr, z[i], cx[i], cy[i], shake[i], rng)
         if flash[i] > 0:
             frame = cv2.addWeighted(frame, 1 - flash[i], np.full_like(frame, 255), flash[i], 0)
+        if glow[i] > 0:
+            frame = bloom(frame, glow[i])
         enc.stdin.write(cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE).tobytes())
     enc.stdin.close()
     enc.wait()
@@ -354,7 +391,7 @@ def render_vertical(out, src=None):
     for p in pts.values():                       # the vertical cut is already centred on the subject horizontally
         p["centre"] = (0.5, p["centre"][1])
         p["eyes"] = (0.5, p["eyes"][1])
-    z, cx, cy, flash, shake = camera(cuts, info["beats"], bell, pts)
+    z, cx, cy, flash, shake, glow = camera(cuts, info["beats"], bell, pts, cont=continuity(src, cuts))
     rng = np.random.default_rng(7)
     n = round(edit.duration(src) * FPS)
     video = BUILD / "vertical_video.mp4"
@@ -371,6 +408,8 @@ def render_vertical(out, src=None):
         frame = warp(fr, z[i], cx[i], cy[i], shake[i] * RW / FW, rng, out=(RW, RH))
         if flash[i] > 0:
             frame = cv2.addWeighted(frame, 1 - flash[i], np.full_like(frame, 255), flash[i], 0)
+        if glow[i] > 0:
+            frame = bloom(frame, glow[i])
         enc.stdin.write(frame.tobytes())
     p.stdout.close()
     p.wait()
