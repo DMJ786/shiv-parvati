@@ -250,10 +250,10 @@ def whoosh(dur, peak_at):
 
 
 # ---------------------------------------------------------------- render
-def render(out):
+def render(out, src=None):
     tl = json.loads((BUILD / "timeline.json").read_text())
     cuts, bell = tl["cuts"], tl["bell"]
-    src = BUILD / "shiv_parvati_16x9_premaster.mov"
+    src = src or BUILD / "shiv_parvati_16x9_premaster.mov"
     info = edit.analyse(ROOT / "music" / tl["music"])
     beats = info["beats"]
     film_frames = round(edit.duration(src) * FPS)

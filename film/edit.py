@@ -93,9 +93,10 @@ def heartbeat(sr, t0, n=2, gap=1.55):
     return out
 
 
-def prepare_score(music, info, dst):
+def prepare_score(music, info, dst, dip=True):
     """Music bus: the score dipped to near-silence before the hit (if the track does not already do it),
-    two heartbeats in the silence and one temple bell exactly on the hit."""
+    two heartbeats in the silence and one temple bell exactly on the hit. With dip=False the music keeps
+    flowing through the eyes-open moment and only the bell is added, a little louder so it rings over it."""
     import librosa
     import soundfile as sf
     sr = 48000
@@ -107,7 +108,7 @@ def prepare_score(music, info, dst):
     t = np.arange(n) / sr
     hit, s3 = info["bell"], info["sections"][3]
     gain = np.ones(n)
-    if not info["silent"]:
+    if dip and not info["silent"]:
         floor = 10 ** (-34 / 20)
         fade_end = min(s3 + 0.9, hit - 0.3)
         seg = (t >= s3) & (t < fade_end)
@@ -115,13 +116,14 @@ def prepare_score(music, info, dst):
         gain[(t >= fade_end) & (t < hit)] = floor
     y = y * gain
     loud = np.sqrt(np.mean(y[:, int(info["sections"][2] * sr):int(info["sections"][3] * sr)] ** 2))
-    for start, sig in heartbeat(sr, hit - 3.1):
-        i = int(start * sr)
-        y[:, i:i + len(sig)] += sig * loud * 2.2
+    if dip:
+        for start, sig in heartbeat(sr, hit - 3.1):
+            i = int(start * sr)
+            y[:, i:i + len(sig)] += sig * loud * 2.2
     bell, _ = librosa.load(str(BELL_SFX), sr=sr, mono=True)
     on = librosa.onset.onset_detect(y=bell, sr=sr, units="samples", backtrack=True)
     bell = bell[(on[0] if len(on) else 0):]
-    bell = bell / (np.sqrt(np.mean(bell[: sr // 2] ** 2)) + 1e-9) * loud * 1.1
+    bell = bell / (np.sqrt(np.mean(bell[: sr // 2] ** 2)) + 1e-9) * loud * (1.1 if dip else 1.5)
     i = int(hit * sr)
     m = min(len(bell), n - i)
     y[:, i:i + m] += bell[:m]
@@ -287,7 +289,7 @@ GRADE = ("colorbalance=rs=-0.07:gs=-0.01:bs=0.08:rm=0.02:gm=0.0:bm=-0.03:rh=0.07
 GRAIN = "noise=c0s=6:c0f=t+u"
 
 
-def render(cuts, picks, music, info, vertical, out):
+def render(cuts, picks, music, info, vertical, out, master=True):
     BUILD.mkdir(exist_ok=True)
     W, H = (1080, 1920) if vertical else (1920, 1080)
     # Everything below is in whole frames so every cut lands exactly on its planned (beat) frame.
@@ -361,6 +363,8 @@ def render(cuts, picks, music, info, vertical, out):
     run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", fc, "-map", "[vout]", "-map", "[mix]",
          "-t", f"{t:.4f}", "-c:v", "libx264", "-crf", "14", "-preset", "medium", "-tune", "grain",
          "-c:a", "pcm_s24le", premaster])
+    if not master:
+        return premaster
     master_audio(premaster, out)
     return out
 

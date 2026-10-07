@@ -415,7 +415,15 @@ def main():
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
     elif a.stage == "reel":
         from film import edit, reel
-        out = reel.render(ROOT / "shiv_parvati_reel.mp4")
+        # The Reel keeps the music flowing through Shiva's eyes opening (no silent dip, no heartbeats): render the
+        # 16:9 film again with that score into build/ only, so the 16:9 master and other cuts stay as they are.
+        tl = json.loads((edit.BUILD / "timeline.json").read_text())
+        music = MUSIC / tl["music"]
+        info = edit.analyse(music)
+        score = edit.prepare_score(music, info, edit.BUILD / "score_reel_flow.wav", dip=False)
+        film = edit.render(tl["cuts"], {k: int(v) for k, v in tl["picks"].items()}, score, info, False,
+                           edit.BUILD / "reel_film_16x9.mp4", master=False)
+        out = reel.render(ROOT / "shiv_parvati_reel.mp4", src=film)
         lufs, tp = edit.loudness(out)
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
 
