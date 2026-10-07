@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+cd "$(dirname "$0")/.."
+DEV="First-person POV of a young male devotee, photoreal cinematic film still, 9:16 vertical. His own warm-brown forearms and hands are visible in frame: a rudraksha bead bracelet on the right wrist, a red sacred kalava thread on the left wrist, the edge of a saffron wool shawl at his sleeves."
+LOOK="Shot on 35mm anamorphic, volumetric snow, cold steel-blue storm light, photoreal detail, high dynamic range, bright enough to read every element. No text, no watermark, no logos."
+SH="Lord Shiva exactly as in the reference image: same face, ash-blue skin, high topknot with glowing crescent moon, tripundra and third eye, cobra around the neck, rudraksha necklaces and armbands, tiger-skin wrap, golden trishul with damru and red ribbons."
+gen(){ python3 tools/img.py "kf/$1.png" "$2" ${3:+"$3"} > "kf/$1.log" 2>&1 & }
+gen s1 "$DEV Both hands grip a jagged ice-covered rock face as he climbs a steep Himalayan ridge in a violent blizzard at dusk. Far above, through the swirling snow, the sacred pyramid peak of Mount Kailash glows faintly gold, a lightning flash inside the clouds. $LOOK"
+gen s2 "$DEV Looking up the cliff, his right hand reaches for an ice ledge that is cracking apart; above him an avalanche of snow and ice explodes down the mountain toward the camera, a towering white wall. Terrifying scale. $LOOK"
+gen s3 "$DEV He is falling backward off the cliff into the white-out: both arms flung up toward the sky, snow and ice chunks tumbling around him, the cliff edge and the storm-dark sky receding above. Motion, vertigo. $LOOK"
+gen s4 "$DEV Deep in a dark icy chasm, nearly black: one hand reaches up toward a faint distant circle of pale blue light far above, a few snowflakes drifting down slowly through the darkness, frost on his fingers. Moody, quiet, mostly dark with a single soft light source. No text."
+gen s5 "$DEV Looking up from the dark: a powerful ash-blue hand with a rudraksha band firmly grasps his right wrist from above, a burst of warm golden-white divine light behind it breaking the darkness, snowflakes lit like sparks. $SH Only the hand and forearm of Shiva are visible. $LOOK" kf/shiva_ref.png
+gen s6 "$DEV Low POV looking up at $SH He stands on the cliff edge in the blizzard holding the devotee's wrist firmly and pulling him up, calm compassionate gaze down into the lens, third eye softly glowing, lightning behind him, snow swirling. The devotee's forearm with rudraksha bracelet in the foreground. $LOOK" kf/shiva_ref.png
+gen s7 "Over-the-shoulder view from behind the devotee (we see only his arm with rudraksha bracelet in the foreground): $SH Seen from behind, Shiva walks ahead across a snowy knife-edge ridge, leading the devotee by the hand toward the glowing golden pyramid peak of Mount Kailash. The storm is parting, a golden glow on the horizon, the first green ribbons of aurora appearing. $LOOK" kf/shiva_ref.png
+gen s8 "Wide epic establishing shot, photoreal cinematic film still, 9:16: two small silhouettes — the tall figure of Lord Shiva with his trishul and a young devotee — walk hand in hand along a snowy ridge toward the sacred pyramid peak of Mount Kailash glowing gold. Above them a vast emerald and violet aurora curls across the starry night sky, subtly forming the shape of the Om symbol. The storm clouds have parted. Awe, peace. No text, no watermark." kf/shiva_ref.png
+wait
+grep -L saved kf/*.log
+echo done
