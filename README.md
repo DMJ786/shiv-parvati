@@ -3,7 +3,8 @@
 A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finished locally with ffmpeg.
 
 **Deliverables**
-- `shiv_parvati_16x9.mp4` — 1080p 16:9 master
+- `shiv_parvati_16x9.mp4` — 1080p 16:9 master (music flows into the bell; the blossom time-lapse, shot 05, plays
+  at 0.75x as take 3 and holds 4.8 s, longer than the ring of fire: `python make_video.py edit --music B --formats 16x9 --no-dip`)
 - `shiv_parvati_9x16.mp4` — 1080×1920 Reels version, reframed on the subject
 - `shiv_parvati_reel.mp4` — 59 s "rotate your phone" Reel (no hook; `HOOK = True` in film/reel.py restores it):
   animated rotate prompt, then the full film turned 90° with push-ins, impact zooms, beat pulses,

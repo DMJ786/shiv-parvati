@@ -354,7 +354,7 @@ def load_picks():
     return {k: int(v) for k, v in picks.items()}
 
 
-def make_edit(version, formats=("16x9", "9x16")):
+def make_edit(version, formats=("16x9", "9x16"), dip=True):
     from film import edit
     music = MUSIC / f"score_{version}.mp3"
     picks = load_picks()
@@ -362,7 +362,7 @@ def make_edit(version, formats=("16x9", "9x16")):
     clip_len = {sid: edit.duration(CLIPS / f"{sid}_t{picks[sid]}.mp4") for sid in SHOTS}
     cuts = edit.plan_cuts(info, clip_len)
     edit.BUILD.mkdir(exist_ok=True)
-    score = edit.prepare_score(music, info, edit.BUILD / f"score_{version}_prepared.wav")
+    score = edit.prepare_score(music, info, edit.BUILD / f"score_{version}_prepared.wav", dip=dip)
     (edit.BUILD / "timeline.json").write_text(json.dumps({"music": music.name, "picks": picks, "tempo": info["tempo"],
                                                           "bell": info["bell"], "cuts": cuts}, indent=1))
     print(f"tempo {info['tempo']:.1f} bpm, bell/hit at {info['bell']:.2f}s, card at {cuts[-1]['end']:.2f}s")
@@ -386,6 +386,7 @@ def main():
     ap.add_argument("--versions", default="A,B,C", help="music versions to make")
     ap.add_argument("--music", default="A", help="music version to cut to")
     ap.add_argument("--formats", default="16x9,9x16")
+    ap.add_argument("--no-dip", action="store_true", help="keep the music flowing into the bell (no silent dip)")
     ap.add_argument("--seconds", default=CLIP_SECONDS, help="clip length for new clips (Kling: 3-15)")
     ap.add_argument("--redo", default="", help="comma-separated ids to regenerate, e.g. 03,07 or shiva")
     a = ap.parse_args()
@@ -407,7 +408,7 @@ def main():
     elif a.stage == "music":
         make_music([x for x in a.versions.split(",") if x])
     elif a.stage == "edit":
-        make_edit(a.music, tuple(a.formats.split(",")))
+        make_edit(a.music, tuple(a.formats.split(",")), dip=not a.no_dip)
     elif a.stage == "vertical":
         from film import edit, reel
         # Like the rotate Reel: music flows through Shiva's eyes opening (no silent dip), rendered into build/ only.

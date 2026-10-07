@@ -17,6 +17,10 @@ DISSOLVE_FRAMES = 7                 # 0.29 s at 24 fps: 3 frames before the cut,
 PRE, POST = 3, 4
 DISSOLVE = DISSOLVE_FRAMES / 24
 MIN_SHOT, MAX_SHOT = 2.0, 4.0
+# Shots allowed to breathe past the 4 s cap, and how much of their section's time each shot should get.
+# 05 (blossoms around her tapasya, slowed to 0.75x as take 3) holds longer than 06 (the ring of fire).
+SHOT_MAX = {"05": 5.0}
+SHOT_WEIGHT = {"05": 1.6, "06": 0.75}
 CARD_MIN = 5.0
 
 # Scenes: a 0.3 s dissolve only where the scene changes, hard cuts inside a scene.
@@ -157,7 +161,8 @@ def plan_cuts(info, clip_len):
             a, b = bell - 3.5, bell
         if s == 4:
             a, b = bell, card_start_ideal
-        ideal.append(a + (b - a) * group.index(sid) / len(group))
+        wts = [SHOT_WEIGHT.get(x, 1.0) for x in group]
+        ideal.append(a + (b - a) * sum(wts[:group.index(sid)]) / sum(wts))
     ideal.append(card_start_ideal)
 
     def dissolve_after(k):   # between shot k and k+1 (or the card)
@@ -166,7 +171,7 @@ def plan_cuts(info, clip_len):
 
     def max_len(k):
         handles = (DISSOLVE / 2 if k > 0 and dissolve_after(k - 1) else 0) + (DISSOLVE / 2 if dissolve_after(k) else 0)
-        return min(MAX_SHOT, clip_len[ids[k]] - handles - 1 / FPS)
+        return min(SHOT_MAX.get(ids[k], MAX_SHOT), clip_len[ids[k]] - handles - 1 / FPS)
 
     beats = [fr(b) for b in info["beats"]]
     bell = fr(bell)
