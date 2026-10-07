@@ -410,7 +410,14 @@ def main():
         make_edit(a.music, tuple(a.formats.split(",")))
     elif a.stage == "vertical":
         from film import edit, reel
-        out = reel.render_vertical(ROOT / "shiv_parvati_insta_vertical.mp4")
+        # Like the rotate Reel: music flows through Shiva's eyes opening (no silent dip), rendered into build/ only.
+        tl = json.loads((edit.BUILD / "timeline.json").read_text())
+        music = MUSIC / tl["music"]
+        info = edit.analyse(music)
+        score = edit.prepare_score(music, info, edit.BUILD / "score_reel_flow.wav", dip=False)
+        film = edit.render(tl["cuts"], {k: int(v) for k, v in tl["picks"].items()}, score, info, True,
+                           edit.BUILD / "vertical_film_9x16.mp4", master=False)
+        out = reel.render_vertical(ROOT / "shiv_parvati_insta_vertical.mp4", src=film)
         lufs, tp = edit.loudness(out)
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
     elif a.stage == "reel":

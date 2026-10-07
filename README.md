@@ -10,7 +10,8 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
   punch-in close-ups and a flash + shake on the bell; the music keeps flowing into the eyes opening (no silent
   dip, just the temple bell over the score) and only slow push-ins follow (`python make_video.py reel`)
 - `shiv_parvati_insta_vertical.mp4` — 57 s native 9:16 Instagram Reel: the face-tracked vertical cut with the same
-  camera treatment as the rotated Reel and a calm ending after the eyes open (`python make_video.py vertical`)
+  camera treatment as the rotated Reel, music flowing into the eyes opening (bell over the score, no silent dip)
+  and a calm ending (`python make_video.py vertical`)
 - `shiv_parvati_reel_cover.jpg` — 1080×1920 cover image for the Reel
 - `shiv_parvati_sati_reel.mp4` — episode 2, "Sati to Parvati": a 45 s native 9:16 story reel (7 new vertical
   shots + 7 re-cropped from the first film), beat-cut, grief drop in the score, bell hard cut into Shiva's eyes
