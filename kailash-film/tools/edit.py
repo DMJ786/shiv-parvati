@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the film: trims + xfades + grade + title (video), and music cut to picture + Veo native SFX (audio)."""
-import subprocess, json
+import subprocess, json, os
 FPS = 24
 # (clip, src_in, src_out, transition_into_next, xfade_dur)
 SHOTS = [("s1", 0.3, 4.9, "fade", .3), ("s2", 1.0, 5.2, "fade", .25), ("s3", 1.6, 7.4, "fade", .4),
@@ -25,7 +25,7 @@ T0 = starts[-1] + 2.2
 fc.append(f"[{cur}]eq=contrast=1.06:saturation=1.05,colorbalance=bs=.03:rh=.02:gh=.01:bh=-.02,vignette=PI/5[g]")
 fc.append(f"[{len(SHOTS)}:v]format=rgba,fade=t=in:st={T0:.2f}:d=1.2:alpha=1[ti]")
 fc.append(f"[g][ti]overlay=0:0:shortest=0,fade=t=out:st={total-0.6:.2f}:d=0.6[vout]")
-inputs += ["-loop", "1", "-t", f"{total:.2f}", "-i", "kf/title.png"]
+inputs += ["-loop", "1", "-t", f"{total:.2f}", "-i", os.environ.get("TITLE", "kf/title.png")]
 # native Veo audio: crossfade chain at the same offsets
 cur = "a0"
 for i in range(len(SHOTS) - 1):
@@ -43,6 +43,6 @@ fc.append(f"[mus][sfx]amix=inputs=2:normalize=0,atrim=0:{total:.2f},afade=t=out:
           f"alimiter=limit=0.85:level=disabled,loudnorm=I=-14:TP=-1.5:LRA=11[aout]")
 cmd = ["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc), "-map", "[vout]", "-map", "[aout]",
        "-c:v", "libx264", "-preset", "slow", "-crf", "19", "-pix_fmt", "yuv420p", "-r", str(FPS),
-       "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart", "kailash.mp4"]
+       "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart", os.environ.get("OUT", "kailash.mp4")]
 subprocess.run(cmd, check=True)
 print(json.dumps({"total": round(total, 2), "starts": [round(s, 2) for s in starts]}))

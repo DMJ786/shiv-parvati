@@ -13,7 +13,7 @@ and is caught and lifted by Lord Shiva, who leads them to the glowing peak benea
 | 17–21.8 | Shiva's ash-blue hand grips the wrist; a golden burst |
 | 21.8–27.2 | Reveal: Shiva on the cliff in the storm (crescent moon, cobra, trishul, third eye) pulls the devotee up |
 | 27.2–31.9 | Shiva leads the devotee by the hand along the ridge toward Kailash as the storm parts |
-| 31.9–39.5 | Wide: two figures beneath the aurora "ॐ"; title "हर हर महादेव · ॐ नमः शिवाय" |
+| 31.9–39.5 | Wide: two figures beneath the aurora "ॐ"; end title (Tamil: "ஓம் நமசிவாய · தென்னாடுடைய சிவனே போற்றி", English: "HE NEVER LETS GO · OM NAMAH SHIVAYA") |
 
 ## How it was made
 - **Keyframes:** Gemini 3 Pro Image (`tools/img.py`, `tools/keyframes.sh`). A Shiva character reference
@@ -23,8 +23,8 @@ and is caught and lifted by Lord Shiva, who leads them to the glowing peak benea
 - **Music:** Lyria 3.5 devotional score (`tools/lyria.py`), cut to picture: tension under the climb, near-silence
   in the darkness, and the full choir landing on the divine catch.
 - **Edit:** `tools/edit.py` (ffmpeg): trims, fades and white flashes, a light teal/gold grade with vignette,
-  the Devanagari title rendered in Chromium (`tools/title.*`), and the music mixed with Veo's native audio.
+  the end title rendered in Chromium (`tools/title_ta.html`, `tools/title_en.html`, `tools/title.mjs`; pick one with `TITLE=... OUT=... python3 tools/edit.py`), and the music mixed with Veo's native audio.
 - Measured: −12.7 LUFS integrated, true peak −1.2 dBFS.
 
-Files: `kailash_the_climb.mp4` (master, 75 MB), `kailash_the_climb_light.mp4` (smaller, for sharing),
+Files: `kailash_the_climb_tamil.mp4` and `kailash_the_climb_english.mp4` (masters), `*_light.mp4` (smaller, for sharing),
 `contact_sheet.jpg`, `keyframes/`. All imagery is AI-generated.
