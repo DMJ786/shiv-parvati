@@ -170,26 +170,27 @@ SHOTS = {
            "@Element1 weeps as tears roll down her cheeks; she lifts her folded hands to her forehead in prayer and "
            "looks up to the heavens, lips trembling. Warm sunrise light grows on her face. Slow push-in.",
            "soft wind, a trembling breath"),
-    # 23: her face large in the foreground (a two-shot with her small in profile drifts off her face), with
-    # her tearful close-up (22) as an extra reference.
-    "23": (["parvati", "kf:22", "shiva"], "Golden sunrise on a snowy Himalayan ledge. Medium shot: in the right "
-                                          "foreground she kneels in her crimson sari, body and face turned three-"
-                                          "quarters toward camera, her face large and clearly visible, tear-streaked, "
-                                          "eyes lifted upward in devotion, hands folded in prayer at her chest. Behind "
-                                          "her on the left stands Shiva, tall and serene with a gentle compassionate "
-                                          "smile, his right palm raised just above her head in blessing, the trishul "
-                                          "with damru in his left hand. Warm golden backlight, snow sparkling, a sea "
-                                          "of clouds and peaks behind.",
-           "Shiva gently lowers his raised palm to rest on @Element1's head in blessing; she closes her eyes with "
-           "tears of joy, hands folded; golden sunlight flares behind them and snow sparkles. Slow push-in.",
+    # 23: she kneels facing him and the camera, looking up into his eyes (her face large: a two-shot with her small
+    # in profile drifts off her face), with her tearful close-up (22) as an extra reference.
+    "23": (["parvati", "kf:22", "shiva"], "Golden sunrise on a snowy Himalayan ledge. Shot from just behind Shiva's "
+                                          "right shoulder: Shiva stands tall in the left foreground, seen three-"
+                                          "quarters from behind, his face in profile looking down at her with a "
+                                          "gentle compassionate smile, his right palm raised above her head in "
+                                          "blessing, the trishul with damru in his left hand. She kneels in front of "
+                                          "him on the right, facing him and the camera, her face large and clearly "
+                                          "visible, looking up into his eyes with tearful devotion, tears on her "
+                                          "cheeks, hands folded in prayer at her chest. They look at each other. Warm "
+                                          "golden sunrise light on her face, snow sparkling, a sea of clouds behind.",
+           "Shiva gently lowers his raised palm to rest on @Element1's head in blessing; she keeps looking up into his "
+           "eyes with tears of joy, hands folded; golden sunlight flares behind them and snow sparkles. Slow push-in.",
            "soft wind, a single gentle temple bell"),
 }
 
 # Shot order of the film (16:9 / 9:16 masters) and of the story Reel. The Reel tells the story through the rishis:
 # they see her tapasya, climb to Kailash and plead with Shiva; his eyes open in one continuous take (21) on the
-# bell, she weeps and prays, and he blesses her.
+# bell, a single tear (14), she weeps and prays, and he blesses her.
 FILM = [f"{i:02d}" for i in range(1, 16)]
-REEL_STORY = ["01", "02", "03", "04", "05", "06", "07", "08", "19", "09", "20", "21", "22", "23", "15"]
+REEL_STORY = ["01", "02", "03", "04", "05", "06", "07", "08", "19", "09", "20", "21", "14", "22", "23", "15"]
 
 # Score: ~57 s, one continuous instrumental with wordless choir. (name, seconds, styles)
 # 15 shots of at most 4 s fill ~50 s of picture, so the score is 57 s: the end card rides the bansuri resolve.

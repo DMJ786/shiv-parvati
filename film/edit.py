@@ -20,7 +20,7 @@ MIN_SHOT, MAX_SHOT = 2.0, 4.0
 # Shots allowed to breathe past the 4 s cap, and how much of their section's time each shot should get.
 # 05 (blossoms around her tapasya, slowed to 0.75x as take 3) holds longer than 06 (the ring of fire).
 SHOT_MAX = {"05": 5.0, "21": 8.0}
-SHOT_WEIGHT = {"05": 1.6, "06": 0.75}
+SHOT_WEIGHT = {"05": 1.6, "06": 0.75, "23": 1.4}   # 23: the blessing gets the most time after the eyes open
 CARD_MIN = 5.0
 
 # Scenes: a 0.3 s dissolve only where the scene changes, hard cuts inside a scene.
@@ -35,7 +35,7 @@ BELL_SHOT = "13"
 # Continuous shots that carry the bell inside them instead of cutting on it: the time (s) into the clip where
 # Shiva's eyes open. The shot is placed so that moment lands exactly on the bell, and it holds ANCHOR_HOLD s after.
 EYES_OPEN = {"21": 4.0}
-ANCHOR_HOLD = 3.2
+ANCHOR_HOLD = 2.8
 # 9:16 reframing for shots without a readable face: subject x (0-1) at the start and end of the shot.
 REFRAME = {"01": (0.45, 0.55), "09": (0.52, 0.52), "10": (0.6, 0.62), "11": (0.5, 0.5), "15": (0.26, 0.74)}
 
@@ -159,7 +159,7 @@ def plan_cuts(info, clip_len, order=FILM):
     bell = info["bell"]
     anchor = next((x for x in ids if x in EYES_OPEN), None)
     after_bell = bell + (ANCHOR_HOLD if anchor else 0.0)     # where the shots after the eyes opening begin
-    card_start_ideal = min(info["length"] - CARD_MIN - 1.0,
+    card_start_ideal = min(info["length"] - CARD_MIN - (0.25 if anchor else 1.0),
                            after_bell + 3.6 * sum(SECTION_OF[x] == 4 for x in ids))
     ideal = []
     for k, sid in enumerate(ids):
