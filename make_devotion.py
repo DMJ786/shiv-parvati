@@ -231,12 +231,13 @@ def prepare_score(music, dst):
 
 
 # ---------------------------------------------------------------- edit
-def make_edit(version):
+def make_edit(version, formats=("9x16", "16x9")):
     import librosa
     from film import edit, reel
     music = mv.MUSIC / f"devotion_{version}.mp3"
     edit.REFRAME.update(dv.REFRAME)
     edit.IN_AT.update(dv.IN_AT)
+    edit.FIT.update(dv.FIT)
     length = edit.duration(music)
     y, sr = librosa.load(str(music), sr=22050, mono=True)
     beats = [float(b) for b in librosa.beat.beat_track(y=y, sr=sr, units="time")[1]]
@@ -248,13 +249,16 @@ def make_edit(version):
     timeline.write_text(json.dumps({"music": music.name, "picks": picks, "bell": dv.BELL_AT, "cuts": cuts}, indent=1))
     score = prepare_score(music, edit.BUILD / "score_devotion.wav")
     card = {"lines": dv.CARD_LINES, "title": dv.CARD_TITLE}
-    film16 = edit.render(cuts, picks, score, info, False, edit.BUILD / "devotion_16x9.mp4", master=False, card=card)
+    film16 = edit.BUILD / "devotion_16x9_premaster.mov"
+    if "16x9" in formats or not film16.exists():
+        film16 = edit.render(cuts, picks, score, info, False, edit.BUILD / "devotion_16x9.mp4", master=False, card=card)
     film9 = edit.render(cuts, picks, score, info, True, edit.BUILD / "devotion_9x16.mp4", master=False, card=card)
     outs = [reel.render_vertical(mv.ROOT / "shiv_parvati_devotion_9x16.mp4", src=film9, timeline=timeline,
                                  src16=film16, treatment=dv.TREATMENT, pulses=False)]
-    out16 = mv.ROOT / "shiv_parvati_devotion_16x9.mp4"
-    edit.master_audio(film16, out16)
-    outs.append(out16)
+    if "16x9" in formats:
+        out16 = mv.ROOT / "shiv_parvati_devotion_16x9.mp4"
+        edit.master_audio(film16, out16)
+        outs.append(out16)
     for out in outs:
         lufs, tp = edit.loudness(out)
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
@@ -265,6 +269,7 @@ def main():
     ap.add_argument("stage", choices=["keyframes", "video", "music", "edit"])
     ap.add_argument("--versions", default="A,B")
     ap.add_argument("--music", default="A")
+    ap.add_argument("--formats", default="9x16,16x9")
     a = ap.parse_args()
     if a.stage == "keyframes":
         make_keyframes()
@@ -273,7 +278,7 @@ def main():
     elif a.stage == "music":
         make_music([v for v in a.versions.split(",") if v])
     else:
-        make_edit(a.music)
+        make_edit(a.music, tuple(a.formats.split(",")))
 
 
 if __name__ == "__main__":

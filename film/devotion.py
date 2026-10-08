@@ -112,5 +112,6 @@ TREATMENT = {      # camera on the 9:16 cut: slow, deliberate moves only; nothin
 }
 IN_AT = {"30": 0.5, "25": 0.5}
 REFRAME = {"30": (0.52, 0.52), "25": (0.5, 0.5), "26": (0.52, 0.55), "11": (0.5, 0.5)}
+FIT = {"26": (0.33, 0.72)}   # 9:16: the blessing keeps his face, his hand and her face in one frame
 CARD_LINES = ["Through every season,", "her devotion remained."]
 CARD_TITLE = "HAR HAR MAHADEV"

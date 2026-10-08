@@ -45,6 +45,9 @@ REFRAME = {"01": (0.45, 0.55), "09": (0.52, 0.52), "10": (0.6, 0.62), "11": (0.5
 REFRAME.update({"19": (0.2, 0.68), "20": (0.32, 0.8), "23": (0.55, 0.55)})
 # These hold on the first subject, glide across between 35% and 70% of the shot, then hold on the second.
 PAN_HOLD = {"19", "20"}
+# Two-person shots too wide for a 9:16 crop: show this horizontal window of the 16:9 frame (fractions of the width)
+# at full width, over a blurred, darkened extension of the same shot above and below.
+FIT = {}
 
 
 def run(cmd):
@@ -359,6 +362,14 @@ def render(cuts, picks, music, info, vertical, out, master=True, card=None):
         v = f"[{i}:v]fps={FPS},trim=start_frame={a}:end_frame={a + n},setpts=PTS-STARTPTS,"
         if sid == "card":
             v += "format=yuv420p,setsar=1,settb=AVTB"
+        elif vertical and sid in FIT:
+            l, r = FIT[sid]
+            fw = round(1920 * (r - l) / 2) * 2
+            fh = round(1080 * W / fw / 2) * 2
+            v += (f"scale=1920:1080,split[bg{i}][fg{i}];[bg{i}]crop=608:1080:656:0,scale={W}:{H},boxblur=40:2,"
+                  f"eq=brightness=-0.12:saturation=0.8[bb{i}];[fg{i}]crop={fw}:1080:{round(1920 * l)}:0,"
+                  f"scale={W}:{fh}:flags=lanczos[ff{i}];[bb{i}][ff{i}]overlay=0:{(H - fh) // 2},"
+                  f"format=yuv420p,setsar=1,settb=AVTB")
         elif vertical:
             x0, x1 = subject_x(clip, a / FPS, (a + n) / FPS, sid)
             cw = round(1080 * 9 / 16 / 2) * 2   # 608 px of the 1920x1080 frame
