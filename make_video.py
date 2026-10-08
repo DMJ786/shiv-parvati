@@ -10,7 +10,7 @@ Shiv & Parvati — ~55 s cinematic AI film, built in stages on fal.ai.
   python make_video.py music        2-3 versions of the ~60 s score (Eleven Music) -> music/
   python make_video.py edit --music A   beat-cut, grade, end card, mix, master -> shiv_parvati_16x9.mp4 / _9x16.mp4
   python make_video.py vertical     native 9:16 Insta Reel with the same camera treatment -> shiv_parvati_insta_vertical.mp4
-  python make_video.py reel         "rotate your phone" Reel (hook + prompt + rotated film) -> shiv_parvati_reel.mp4
+  python make_video.py reel         "rotate your phone" story Reel (prompt + rotated story cut) -> shiv_parvati_reel.mp4
 
 Every stage is resumable: finished files are skipped. Delete a file (or pass --redo 03,07) to regenerate it.
 Setup: pip install -r requirements.txt, ffmpeg on PATH, export FAL_KEY=...
@@ -39,10 +39,15 @@ IMAGE_T2I = os.getenv("IMAGE_T2I", "fal-ai/nano-banana-pro")
 # and profile / eyes-closed frames of the right person land around 0.45-0.55.
 FACE_MIN = 0.45
 FACE_TRIES = 4
-FACE_SHIVA = ("11", "12", "13")   # Shiva shots where his face is readable
+FACE_SHIVA = ("11", "12", "13", "21")   # Shiva shots where his face is readable
+FACE_SKIP = ("19",)                     # Parvati too small to score (seen across the gorge)
 
 VIDEO_MODEL = os.getenv("VIDEO_MODEL", "fal-ai/kling-video/v3/pro/image-to-video")
 CLIP_SECONDS = os.getenv("CLIP_SECONDS", "4")
+# Per-shot clip length (Kling: 3-15 s) where it differs from CLIP_SECONDS. 21 = the continuous eyes-opening take.
+SHOT_SECONDS = {"19": "5", "20": "5", "21": "8", "23": "5"}
+# Shots animated between two keyframes: start frame from the named keyframe, end frame = the shot's own keyframe.
+CLIP_FROM = {"21": "12"}
 VIDEO_LOOK = ("Cinematic, photoreal, smooth natural motion, epic Indian mythological film. Keep every character's face, "
               "costume and the lighting exactly as in the start frame.")
 MUSIC_MODEL = os.getenv("MUSIC_MODEL", "elevenlabs/music/v2.5")
@@ -150,6 +155,8 @@ def load_scores():
 def identity(sid):
     """Whose face to score in a shot (None where no face is readable: landscapes, macro, silhouettes)."""
     refs = SHOTS[sid][0]
+    if sid in FACE_SKIP:
+        return None
     if "parvati" in refs:
         return "parvati"
     if "shiva" in refs and sid in FACE_SHIVA:
@@ -226,7 +233,7 @@ def _has_font():
 # ---------------------------------------------------------------- video
 def video_prompt(sid):
     _, _, action, sound = SHOTS[sid]
-    who = "@Element1 " if "parvati" in SHOTS[sid][0] else ""
+    who = "@Element1 " if "parvati" in SHOTS[sid][0] and "@Element1" not in action else ""
     return f"{who}{action} {VIDEO_LOOK} Audio: {sound}; ambience and sound effects only — no music, no speech."
 
 
@@ -236,14 +243,20 @@ def make_clip(sid, take):
         return dst
     start = CLIPS / f"{sid}_start.jpg"
     if not start.exists():
-        Image.open(KF / f"{sid}.png").convert("RGB").resize((1920, 1080), Image.LANCZOS).save(start, quality=95)
-    args = {"start_image_url": upload(start), "prompt": video_prompt(sid), "duration": CLIP_SECONDS,
+        Image.open(KF / f"{CLIP_FROM.get(sid, sid)}.png").convert("RGB").resize((1920, 1080), Image.LANCZOS).save(
+            start, quality=95)
+    secs = SHOT_SECONDS.get(sid, CLIP_SECONDS)
+    args = {"start_image_url": upload(start), "prompt": video_prompt(sid), "duration": secs,
             "generate_audio": True, "negative_prompt": VIDEO_NEG}
+    if sid in CLIP_FROM:
+        end = CLIPS / f"{sid}_end.jpg"
+        Image.open(KF / f"{sid}.png").convert("RGB").resize((1920, 1080), Image.LANCZOS).save(end, quality=95)
+        args["end_image_url"] = upload(end)
     if "parvati" in SHOTS[sid][0]:
         # Kling element = identity lock: frontal portrait plus up to three other angles.
         args["elements"] = [{"frontal_image_url": upload(REFS / "p01.png"),
                              "reference_image_urls": [upload(REFS / f"{n}.png") for n in ("p03", "p04", "p06")]}]
-    print(f"[{sid} take {take}] {VIDEO_MODEL} {CLIP_SECONDS}s")
+    print(f"[{sid} take {take}] {VIDEO_MODEL} {secs}s")
     res = fal().subscribe(VIDEO_MODEL, arguments=args)
     download(res["video"]["url"], dst)
     print("  ->", dst)
@@ -423,15 +436,25 @@ def main():
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
     elif a.stage == "reel":
         from film import edit, reel
-        # The Reel keeps the music flowing through Shiva's eyes opening (no silent dip, no heartbeats): render the
-        # 16:9 film again with that score into build/ only, so the 16:9 master and other cuts stay as they are.
+        from film.shots import REEL_STORY
+        # The Reel tells its own story (REEL_STORY: the rishis see her, plead with Shiva, his eyes open in one
+        # continuous take, she prays, he blesses her) on the film's score, with the music flowing through the eyes
+        # opening (no silent dip, no heartbeats). Rendered into build/ only, so the film masters stay as they are.
         tl = json.loads((edit.BUILD / "timeline.json").read_text())
         music = MUSIC / tl["music"]
         info = edit.analyse(music)
+        picks = load_picks()
+        clip_len = {sid: edit.duration(CLIPS / f"{sid}_t{picks[sid]}.mp4") for sid in REEL_STORY}
+        cuts = edit.plan_cuts(info, clip_len, order=REEL_STORY)
+        timeline = edit.BUILD / "timeline_reel.json"
+        timeline.write_text(json.dumps({"music": music.name, "picks": picks, "tempo": info["tempo"],
+                                        "bell": info["bell"], "cuts": cuts}, indent=1))
+        for c in cuts:
+            print(f"  {c['id']}  {c['start']:6.2f} -> {c['end']:6.2f}  ({c['end'] - c['start']:.2f}s)"
+                  f"{'  dissolve' if c['dissolve_out'] else ''}")
         score = edit.prepare_score(music, info, edit.BUILD / "score_reel_flow.wav", dip=False)
-        film = edit.render(tl["cuts"], {k: int(v) for k, v in tl["picks"].items()}, score, info, False,
-                           edit.BUILD / "reel_film_16x9.mp4", master=False)
-        out = reel.render(ROOT / "shiv_parvati_reel.mp4", src=film)
+        film = edit.render(cuts, picks, score, info, False, edit.BUILD / "reel_film_16x9.mp4", master=False)
+        out = reel.render(ROOT / "shiv_parvati_reel.mp4", src=film, timeline=timeline)
         lufs, tp = edit.loudness(out)
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
 

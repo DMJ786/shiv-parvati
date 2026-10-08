@@ -46,7 +46,15 @@ TREATMENT = {
     "13": {"push": 0.08, "continue": True, "glow": True},
     "14": {"push": 0.05},              # after the eyes open: slow push-ins only, nothing on the beat
     "15": {"push": -0.08},            # slow pull-back reveal
+    # Story Reel: the rishis see her and plead with Shiva (choir, beat pulses), then 21 is one real, unbroken take
+    # of his eyes opening (no cut, no glow, no punch): a slow push-in to his eyes, and only slow moves after it.
+    "19": {"push": 0.07, "punch": 0.08},
+    "20": {"push": 0.08, "punch": 0.10},
+    "21": {"push": 0.16, "point": "eyes"},
+    "22": {"push": 0.06},
+    "23": {"push": 0.05},
 }
+CALM_FROM = ("12", "21")             # no beat pulses from the first of these shots on
 FALLBACK_CENTRE = {"01": (0.5, 0.5), "09": (0.52, 0.45), "10": (0.61, 0.45), "11": (0.5, 0.45), "15": (0.5, 0.5)}
 
 
@@ -155,9 +163,12 @@ def camera(cuts, beats, bell, pts, cont=None):
                 w = ease((i - lo) / (hi - lo))
                 for arr in (z, cx, cy):
                     arr[i] = arr[lo - 1] * (1 - w) + arr[hi] * w
-    # Beat pulses under the choir only. Once Shiva's eyes open the ending stays calm and emotional.
+    # Beat pulses under the choir only (from the rishis on). From Shiva's close-up on, the ending stays calm.
+    ids = [c["id"] for c in cuts]
+    pulse_from = cuts[ids.index("08")]["start"]
+    pulse_until = next(c["start"] for c in cuts if c["id"] in CALM_FROM)
     for j, bt in enumerate(beats):
-        if cuts[7]["start"] <= bt < cuts[11]["start"] and j % 2 == 0:
+        if pulse_from <= bt < pulse_until and j % 2 == 0:
             amp = 0.022
         else:
             continue
@@ -285,15 +296,16 @@ def whoosh(dur, peak_at):
 
 
 # ---------------------------------------------------------------- render
-def render(out, src=None):
-    tl = json.loads((BUILD / "timeline.json").read_text())
+def render(out, src=None, timeline=None):
+    tl = json.loads((timeline or BUILD / "timeline.json").read_text())
     cuts, bell = tl["cuts"], tl["bell"]
     src = src or BUILD / "shiv_parvati_16x9_premaster.mov"
     info = edit.analyse(ROOT / "music" / tl["music"])
     beats = info["beats"]
     film_frames = round(edit.duration(src) * FPS)
     pts = subject_points(src, cuts)
-    z, cx, cy, flash, shake, glow = camera(cuts, beats, bell, pts, cont=continuity(src, cuts))
+    match = any(c["id"] == "13" for c in cuts)
+    z, cx, cy, flash, shake, glow = camera(cuts, beats, bell, pts, cont=continuity(src, cuts) if match else None)
     rng = np.random.default_rng(7)
 
     video = BUILD / "reel_video.mp4"
@@ -314,7 +326,7 @@ def render(out, src=None):
 
     # 1) Optional hook: Shiva's eyes open on the bell, vertical crop around his face, captions popping in.
     hook_n = round(HOOK_LEN * FPS) if HOOK else 0
-    hook_t0 = cuts[12]["start"]
+    hook_t0 = cuts[12]["start"] if HOOK else 0.0
     size = 80
     while True:
         big = ImageFont.truetype(str(BOLD), size)
@@ -322,7 +334,7 @@ def render(out, src=None):
             break
         size -= 2
     caption = text_layer(HOOK_LINES, [big, big], 330)
-    fx, fy = pts["13"]["centre"]
+    fx, fy = pts["13"]["centre"] if HOOK else (0.5, 0.5)
     for i, fr in enumerate(reader(hook_t0, hook_n) if HOOK else []):
         zz = 1.0 + 0.10 * ease(i / hook_n) + (0.12 * (1 - ease(i / 6)) if i < 6 else 0)
         vw = FH * RW / RH                                 # 9:16 window inside the 16:9 frame

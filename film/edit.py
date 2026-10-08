@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-from film.shots import MUSIC_SECTIONS, SHOTS
+from film.shots import FILM, MUSIC_SECTIONS, SHOTS
 
 ROOT = Path(__file__).resolve().parent.parent
 CLIPS, MUSIC, BUILD = ROOT / "clips", ROOT / "music", ROOT / "build"
@@ -19,17 +19,23 @@ DISSOLVE = DISSOLVE_FRAMES / 24
 MIN_SHOT, MAX_SHOT = 2.0, 4.0
 # Shots allowed to breathe past the 4 s cap, and how much of their section's time each shot should get.
 # 05 (blossoms around her tapasya, slowed to 0.75x as take 3) holds longer than 06 (the ring of fire).
-SHOT_MAX = {"05": 5.0}
+SHOT_MAX = {"05": 5.0, "21": 8.0}
 SHOT_WEIGHT = {"05": 1.6, "06": 0.75}
 CARD_MIN = 5.0
 
 # Scenes: a 0.3 s dissolve only where the scene changes, hard cuts inside a scene.
 SCENES = {"01": "A", "02": "A", "03": "A", "04": "B", "05": "B", "06": "C", "07": "C", "08": "D", "09": "D",
-          "10": "E", "11": "E", "12": "E", "13": "E", "14": "F", "15": "F", "card": "G"}
+          "10": "E", "11": "E", "12": "E", "13": "E", "14": "F", "15": "F", "card": "G",
+          "19": "D", "20": "E", "21": "E", "22": "F", "23": "F"}
 # Which music section each shot lives in (index into MUSIC_SECTIONS); 13 starts on the bell.
 SECTION_OF = {"01": 0, "02": 0, "03": 0, "04": 1, "05": 1, "06": 1, "07": 1,
-              "08": 2, "09": 2, "10": 2, "11": 2, "12": 3, "13": 4, "14": 4, "15": 4}
+              "08": 2, "09": 2, "10": 2, "11": 2, "12": 3, "13": 4, "14": 4, "15": 4,
+              "19": 2, "20": 2, "21": 3, "22": 4, "23": 4}
 BELL_SHOT = "13"
+# Continuous shots that carry the bell inside them instead of cutting on it: the time (s) into the clip where
+# Shiva's eyes open. The shot is placed so that moment lands exactly on the bell, and it holds ANCHOR_HOLD s after.
+EYES_OPEN = {"21": 4.0}
+ANCHOR_HOLD = 3.2
 # 9:16 reframing for shots without a readable face: subject x (0-1) at the start and end of the shot.
 REFRAME = {"01": (0.45, 0.55), "09": (0.52, 0.52), "10": (0.6, 0.62), "11": (0.5, 0.5), "15": (0.26, 0.74)}
 
@@ -139,7 +145,7 @@ def prepare_score(music, info, dst, dip=True):
 
 
 # ---------------------------------------------------------------- cut plan
-def plan_cuts(info, clip_len):
+def plan_cuts(info, clip_len, order=FILM):
     """Choose cut times on beats with dynamic programming.
 
     Cut k is the start of shot k (k = 0..14) and cut 15 is the start of the end card. Cut 0 = 0, the cut into
@@ -147,11 +153,14 @@ def plan_cuts(info, clip_len):
     after dissolve handles), the end card gets at least 5 s, and the cuts stay as close as possible to an even
     spread of each shot group over its music section.
     """
-    ids = list(SHOTS)
+    ids = list(order)
     n = len(ids)
     sec = info["sections"]
     bell = info["bell"]
-    card_start_ideal = min(info["length"] - CARD_MIN - 1.0, bell + 3 * 3.6)
+    anchor = next((x for x in ids if x in EYES_OPEN), None)
+    after_bell = bell + (ANCHOR_HOLD if anchor else 0.0)     # where the shots after the eyes opening begin
+    card_start_ideal = min(info["length"] - CARD_MIN - 1.0,
+                           after_bell + 3.6 * sum(SECTION_OF[x] == 4 for x in ids))
     ideal = []
     for k, sid in enumerate(ids):
         s = SECTION_OF[sid]
@@ -160,7 +169,7 @@ def plan_cuts(info, clip_len):
         if s == 3:
             a, b = bell - 3.5, bell
         if s == 4:
-            a, b = bell, card_start_ideal
+            a, b = after_bell, card_start_ideal
         wts = [SHOT_WEIGHT.get(x, 1.0) for x in group]
         ideal.append(a + (b - a) * sum(wts[:group.index(sid)]) / sum(wts))
     ideal.append(card_start_ideal)
@@ -177,6 +186,13 @@ def plan_cuts(info, clip_len):
     bell = fr(bell)
     cands = [[0.0]] + [[bell] if ids[k] == BELL_SHOT else beats for k in range(1, n)] + \
             [[b for b in beats if b <= info["length"] - CARD_MIN]]
+    if anchor:
+        # In on a beat while his eyes are still closed (at least 2 s before the bell, never before the clip starts),
+        # out on a beat at least 2 s after they open and before the clip runs out.
+        k = ids.index(anchor)
+        eye, tail = EYES_OPEN[anchor], clip_len[anchor] - EYES_OPEN[anchor] - (POST + 1) / FPS
+        cands[k] = [b for b in beats if bell - eye + PRE / FPS <= b <= bell - 2.0]
+        cands[k + 1] = [b for b in cands[k + 1] if bell + 2.0 <= b <= bell + tail]
     # best[k][t] = (cost, previous cut) for cut k landing at t
     best = [{0.0: (0.0, None)}]
     for k in range(1, n + 1):
@@ -313,8 +329,12 @@ def render(cuts, picks, music, info, vertical, out, master=True):
         dis_in = k > 0 and cuts[k - 1]["dissolve_out"]
         n = K[k + 1] - K[k] + (PRE if dis_in else 0) + (POST if c["dissolve_out"] else 0)
         avail = int(duration(clip) * FPS) - 1
-        # Shot 13 starts on its first frame (eyes already open on the bell); others sit a little into the clip.
-        a = 0 if c["id"] == "13" else max(0, min(int((avail - n) * 0.35), avail - n))
+        # Shot 13 starts on its first frame (eyes already open on the bell); a continuous eyes-opening shot starts
+        # so his eyes open exactly on the bell; others sit a little into the clip.
+        if c["id"] in EYES_OPEN:
+            a = round((EYES_OPEN[c["id"]] - (info["bell"] - c["start"])) * FPS) - (PRE if dis_in else 0)
+        else:
+            a = 0 if c["id"] == "13" else max(0, min(int((avail - n) * 0.35), avail - n))
         segs.append((clip, a, n, dis_in, c["id"]))
     segs.append((card, 0, card_frames, True, "card"))
 

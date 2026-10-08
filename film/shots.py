@@ -130,7 +130,62 @@ SHOTS = {
            "The sun rises slowly between the two still silhouettes, clouds drift below, golden light floods the sky. "
            "Slow push-in.",
            "soft wind, distant temple bell resonance"),
+    # ---- Reel story (v2): the rishis see her tapasya, carry it to Shiva, he opens his eyes and blesses her.
+    "19": (["sages", "parvati", "kf:04"], "Over-the-shoulder shot from behind the three rishis standing on a snowy "
+                                           "ridge in light snowfall, their faces in profile in the left foreground: "
+                                           "across a misty gorge they see the young woman meditating alone on her "
+                                           "cliff ledge in the crimson sari, eyes closed, hands in namaste, her face "
+                                           "turned toward the distant sacred pyramid peak of Mount Kailash that "
+                                           "glows on the horizon. The rishi in white robes raises his arm and points "
+                                           "past her toward Kailash; the other two watch in wonder.",
+           "The rishis stop on the ridge and watch @Element1 in wonder as she meditates, perfectly still, facing "
+           "Kailash; the rishi in white slowly raises his arm and points past her toward the distant peak, and the "
+           "others turn their heads to follow. Snow drifts. Slow push-in.",
+           "soft mountain wind, snow, no voices"),
+    "20": (["sages", "shiva", "kf:11"], "On the snowy summit of Mount Kailash under the swirling storm sky, the three "
+                                        "rishis kneel in the snow before Shiva, who sits in padmasana meditation on "
+                                        "the right with eyes closed and his trishul planted beside him. The rishi in "
+                                        "white robes, kneeling closest, has turned and gestures with an open palm "
+                                        "back down the mountain toward the valley, pleading; the other two bow with "
+                                        "folded hands. Medium-wide side angle, all faces clearly visible.",
+           "The kneeling rishi in white bows with folded hands, then sweeps his open palm back toward the valley far "
+           "below and presses his hand to his heart, pleading with Shiva; the other two bow low. Shiva stays perfectly "
+           "still, eyes closed. Snow streams in the storm wind. Slow push-in.",
+           "storm wind, distant thunder, no voices"),
+    # 21 is one continuous Kling take from keyframe 12 (eyes closed) to this keyframe (the same frame, eyes open).
+    "21": (["shiva", "kf:12"], "The exact same frame as image 2: the same extreme close-up of Shiva's face with the "
+                               "same framing, scale, head position, cobra, frost, snowflakes, lighting and colours, "
+                               "but now his eyes are open: natural dark brown eyes with a calm, deep, compassionate "
+                               "gaze into the camera, the vertical third-eye mark still closed. No glow, no golden "
+                               "light, no added light, nothing else changed.",
+           "One continuous, unbroken shot. Shiva sits perfectly still in deep meditation with his eyes closed while "
+           "snowflakes hang in the air. After about three seconds his eyelashes tremble, then his eyelids slowly and "
+           "gently open over two seconds, naturally, revealing calm dark eyes, and he holds a deep compassionate "
+           "gaze into the camera. Very slow steady push-in. No glow, no light change, no cut.",
+           "near silence, faint wind"),
+    "22": (["parvati", "kf:04"], "Close-up of her face and folded hands: she kneels on the snowy ledge, tears streaming "
+                                 "down her cheeks, glistening eyes lifted toward the heavens, hands pressed together "
+                                 "in prayer at her chest, lips trembling in devotion, the first golden sunrise light "
+                                 "breaking through the storm onto her face, snowflakes drifting.",
+           "@Element1 weeps as tears roll down her cheeks; she lifts her folded hands to her forehead in prayer and "
+           "looks up to the heavens, lips trembling. Warm sunrise light grows on her face. Slow push-in.",
+           "soft wind, a trembling breath"),
+    "23": (["shiva", "parvati"], "Golden sunrise on a snowy Himalayan ledge: Shiva stands before her, tall and serene, "
+                                 "eyes open with a gentle compassionate smile, his right palm raised over her head in "
+                                 "blessing, the trishul with damru in his left hand; she kneels before him in her "
+                                 "crimson sari with hands folded in prayer, her tear-streaked face lifted toward him "
+                                 "in devotion. Medium-wide side angle, both faces clearly visible, warm golden light, "
+                                 "snow sparkling, peaks and a sea of clouds behind.",
+           "Shiva gently lowers his raised palm to rest on @Element1's head in blessing; she closes her eyes with "
+           "tears of joy, hands folded; golden sunlight flares behind them and snow sparkles. Slow push-in.",
+           "soft wind, a single gentle temple bell"),
 }
+
+# Shot order of the film (16:9 / 9:16 masters) and of the story Reel. The Reel tells the story through the rishis:
+# they see her tapasya, climb to Kailash and plead with Shiva; his eyes open in one continuous take (21) on the
+# bell, she weeps and prays, and he blesses her.
+FILM = [f"{i:02d}" for i in range(1, 16)]
+REEL_STORY = ["01", "02", "03", "04", "05", "06", "07", "08", "19", "09", "20", "21", "22", "23", "15"]
 
 # Score: ~57 s, one continuous instrumental with wordless choir. (name, seconds, styles)
 # 15 shots of at most 4 s fill ~50 s of picture, so the score is 57 s: the end card rides the bansuri resolve.
