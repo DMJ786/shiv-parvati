@@ -6,11 +6,13 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
 - `shiv_parvati_16x9.mp4` — 1080p 16:9 master (music flows into the bell; the blossom time-lapse, shot 05, plays
   at 0.75x as take 3 and holds 4.8 s, longer than the ring of fire: `python make_video.py edit --music B --formats 16x9 --no-dip`)
 - `shiv_parvati_9x16.mp4` — 1080×1920 Reels version, reframed on the subject
-- `shiv_parvati_reel.mp4` — 59 s "rotate your phone" Reel (no hook; `HOOK = True` in film/reel.py restores it):
-  animated rotate prompt, then the full film turned 90° with push-ins, impact zooms, beat pulses,
-  punch-in close-ups; Shiva's closed eyes and the eyes opening play as one continuous push-in (match cut, soft
-  golden glow, no flash or shake), the music keeps flowing into the bell, only slow push-ins follow, and the
-  blossom shot holds longer than the fire, as in the film (`python make_video.py reel`)
+- `shiv_parvati_reel.mp4` — 59 s "rotate your phone" story Reel (no hook; `HOOK = True` in film/reel.py restores it):
+  animated rotate prompt, then the story cut (`REEL_STORY` in film/shots.py) turned 90° with push-ins, impact zooms
+  and beat pulses under the choir. The rishis see her meditating toward Kailash (19), climb (09) and plead with
+  Shiva (20); his eyes then open slowly in one continuous Kling take animated from the closed-eyes frame to the
+  same frame with eyes open (21, no cut, no glow), placed so they open on the bell while the music keeps flowing;
+  then her single tear (14), she weeps and prays (22), Shiva blesses her (23), sunrise and the end card, with only
+  slow push-ins after the eyes open (`python make_video.py reel`)
 - `shiv_parvati_insta_vertical.mp4` — 57 s native 9:16 Instagram Reel: the face-tracked vertical cut with the same
   camera treatment as the rotated Reel (continuous eyes-opening shot, longer blossoms), music flowing into the
   eyes opening (bell over the score, no silent dip) and a calm ending (`python make_video.py vertical`)
