@@ -8,7 +8,8 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
 - `shiv_parvati_9x16.mp4` — 1080×1920 Reels version, reframed on the subject
 - `shiv_parvati_reel.mp4` — 59 s "rotate your phone" story Reel (no hook; `HOOK = True` in film/reel.py restores it):
   animated rotate prompt, then the story cut (`REEL_STORY` in film/shots.py) turned 90° with push-ins, impact zooms
-  and beat pulses under the choir. The rishis see her meditating toward Kailash (19), climb (09) and plead with
+  and beat pulses under the choir. The ring of fire becomes a Panchabhuta trial (24: fire, storm wind, rain,
+  cracking earth, blazing sun and lightning assail her and she does not flinch). The rishis see her meditating toward Kailash (19), climb (09) and plead with
   Shiva (20); his eyes then open slowly in one continuous Kling take animated from the closed-eyes frame to the
   same frame with eyes open (21, no cut, no glow), placed so they open on the bell while the music keeps flowing;
   then her single tear (14), she weeps and prays (22), Shiva blesses her (23), sunrise and the end card, with only

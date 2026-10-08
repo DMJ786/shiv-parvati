@@ -37,8 +37,8 @@ BELL_SHOT = "13"
 EYES_OPEN = {"21": 4.8}
 ANCHOR_HOLD = 2.8
 # Where in its clip a shot's used part sits (0 = from the start, 1 = up to the end; default 0.35):
-# 19 opens on the rishi pointing toward Kailash, 20 ends on his gesture back to the valley.
-IN_AT = {"19": 0.0, "20": 1.0}
+# 19 opens on the rishi pointing toward Kailash, 20 ends on his gesture back to the valley, 24 opens on the strongest wind.
+IN_AT = {"19": 0.0, "20": 1.0, "24": 0.0}
 # 9:16 reframing for shots without a readable face: subject x (0-1) at the start and end of the shot.
 REFRAME = {"01": (0.45, 0.55), "09": (0.52, 0.52), "10": (0.6, 0.62), "11": (0.5, 0.5), "15": (0.26, 0.74)}
 
