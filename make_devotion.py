@@ -5,6 +5,7 @@ The devotion cut of "Shiv & Parvati": ~45 s, built for 9:16 (a 16:9 version come
   python make_devotion.py keyframes   the four season edits of keyframe 05, the rishis' look (25), the blessing (26)
   python make_devotion.py video       Kling: season transitions (joined into one shot, clips/30_t1.mp4), 25 and 26
   python make_devotion.py music       the ~46 s score cut to the story (Eleven Music v2.5) -> music/devotion_X.mp3
+  python make_devotion.py vertical-keyframes / vertical-video   native 9:16 rishi shots (19v, 25v, 20v)
   python make_devotion.py edit        cut, grade, card, mix, master -> shiv_parvati_devotion_9x16.mp4 / _16x9.mp4
 
 Shot list, cut and score plan: film/devotion.py. Reuses make_video.py (fal, Nano Banana Pro, Kling helpers),
@@ -76,6 +77,52 @@ def blessing():
               f"frame: {desc} {STYLE}")
     refs = CROPS + [KF / "22.png", HEROES / "shiva.png", KF / "21.png"]
     best_of("26", lambda p, i: mv.still(p, prompt, refs, seed=32600 + i), "parvati", tries=4)
+
+
+def vertical_frame(vid):
+    _, refs, desc, _, _, _ = dv.VERTICAL[vid]
+    paths, notes = [], []
+    for r in refs:
+        first = len(paths) + 1
+        if r.startswith("kf:"):
+            paths.append(KF / f"{r[3:]}.png")
+            notes.append(f"Image {first} is the wide 16:9 version of this shot: keep its characters, costumes, light and "
+                         "setting, recomposed for a tall vertical frame.")
+        elif r == "parvati":
+            paths += CROPS
+            notes.append(f"Images {first}-{len(paths)} are identity photos of the young woman.")
+        else:
+            paths.append(HEROES / f"{r}.png")
+            notes.append(f"Image {first} is the character reference for {'Shiva' if r == 'shiva' else 'the three rishis'}; "
+                         "keep them exactly on-model.")
+    who = (SAGES + ". ") + (SHIVA + ". " if "shiva" in refs else "")
+    prompt = f"{' '.join(notes)} {who}Create a new photoreal vertical 9:16 film frame: {desc} {STYLE.replace('16:9 widescreen, ', '')}"
+    best_of(vid, lambda p, i: mv.still(p, prompt, paths, seed=33000 + 7 * len(vid) + ord(vid[1]) + i, aspect="9:16"), None)
+
+
+def make_vertical_keyframes():
+    with cf.ThreadPoolExecutor(3) as ex:
+        list(ex.map(vertical_frame, dv.VERTICAL))
+    sheet = Image.new("RGB", (3 * 405, 720), (16, 16, 16))
+    for i, vid in enumerate(dv.VERTICAL):
+        sheet.paste(Image.open(KF / f"{vid}.png").convert("RGB").resize((405, 720), Image.LANCZOS), (i * 405, 0))
+    sheet.save(mv.ROOT / "build" / "devotion_vertical_keyframes.jpg", quality=88)
+    print("sheet ->", mv.ROOT / "build" / "devotion_vertical_keyframes.jpg")
+
+
+def vertical_clip(vid):
+    dst = CLIPS / f"{vid}_t1.mp4"
+    if dst.exists():
+        return dst
+    _, _, _, action, sound, secs = dv.VERTICAL[vid]
+    start = CLIPS / f"{vid}_start.jpg"
+    Image.open(KF / f"{vid}.png").convert("RGB").resize((1080, 1920), Image.LANCZOS).save(start, quality=95)
+    args = {"start_image_url": mv.upload(start), "duration": secs, "generate_audio": True, "negative_prompt": mv.VIDEO_NEG,
+            "prompt": f"{action} {mv.VIDEO_LOOK} Audio: {sound}; ambience and sound effects only, no music, no speech."}
+    print(f"[{vid}] {secs}s", flush=True)
+    mv.download(mv.fal().subscribe(mv.VIDEO_MODEL, arguments=args)["video"]["url"], dst)
+    mv.clip_frames(dst, CLIPS / f"{vid}_t1_frames.jpg")
+    return dst
 
 
 def make_keyframes():
@@ -238,6 +285,7 @@ def make_edit(version, formats=("9x16", "16x9")):
     edit.REFRAME.update(dv.REFRAME)
     edit.IN_AT.update(dv.IN_AT)
     edit.FIT.update(dv.FIT)
+    edit.VERTICAL_CLIP.update({shot: vid for vid, (shot, *_) in dv.VERTICAL.items() if (CLIPS / f"{vid}_t1.mp4").exists()})
     length = edit.duration(music)
     y, sr = librosa.load(str(music), sr=22050, mono=True)
     beats = [float(b) for b in librosa.beat.beat_track(y=y, sr=sr, units="time")[1]]
@@ -266,7 +314,7 @@ def make_edit(version, formats=("9x16", "16x9")):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=["keyframes", "video", "music", "edit"])
+    ap.add_argument("stage", choices=["keyframes", "video", "music", "edit", "vertical-keyframes", "vertical-video"])
     ap.add_argument("--versions", default="A,B")
     ap.add_argument("--music", default="A")
     ap.add_argument("--formats", default="9x16,16x9")
@@ -275,6 +323,11 @@ def main():
         make_keyframes()
     elif a.stage == "video":
         make_video()
+    elif a.stage == "vertical-keyframes":
+        make_vertical_keyframes()
+    elif a.stage == "vertical-video":
+        with cf.ThreadPoolExecutor(3) as ex:
+            list(ex.map(vertical_clip, dv.VERTICAL))
     elif a.stage == "music":
         make_music([v for v in a.versions.split(",") if v])
     else:

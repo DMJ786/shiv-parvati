@@ -99,8 +99,8 @@ def make_crops():
 
 
 # ---------------------------------------------------------------- stills
-def still(dst, prompt, ref_paths, seed=None):
-    args = {"prompt": prompt, "aspect_ratio": "16:9", "resolution": "2K", "output_format": "png",
+def still(dst, prompt, ref_paths, seed=None, aspect="16:9"):
+    args = {"prompt": prompt, "aspect_ratio": aspect, "resolution": "2K", "output_format": "png",
             "safety_tolerance": "5"}
     if seed is not None:
         args["seed"] = seed

@@ -115,3 +115,34 @@ REFRAME = {"30": (0.52, 0.52), "25": (0.5, 0.5), "26": (0.52, 0.55), "11": (0.5,
 FIT = {"26": (0.33, 0.72)}   # 9:16: the blessing keeps his face, his hand and her face in one frame
 CARD_LINES = ["Through every season,", "her devotion remained."]
 CARD_TITLE = "HAR HAR MAHADEV"
+
+# Native 9:16 versions of the rishi shots for the vertical cut (the 16:9 frames are too wide to crop):
+# id: (16:9 shot it replaces, refs, keyframe description, video action, ambience, seconds)
+VERTICAL = {
+    "19v": ("19", ["kf:19", "sages", "parvati"],
+            "Vertical 9:16 film frame, layered top to bottom: in the lower foreground the three rishis stand on a snowy "
+            "ridge seen from behind and in profile, the rishi in white robes raising his arm to point; beyond them, in "
+            "the middle of the frame across a misty gorge, the young woman in a crimson sari meditates alone on her "
+            "cliff ledge, eyes closed, hands in namaste; at the top of the frame the sacred pyramid peak of Mount "
+            "Kailash glows in the first light. Light snowfall.",
+            "The rishi in white points past the meditating woman toward Kailash; the others turn their heads to follow, "
+            "awed. She stays perfectly still. Snow drifts. Slow push-in.",
+            "soft mountain wind, snow, no voices", "4"),
+    "25v": ("25", ["kf:25", "sages"],
+            "Vertical 9:16 medium shot: the three rishis standing close together on a snowy ridge, all three fully in "
+            "frame from the waist up, the rishi in white in the centre front and the two others just behind him on "
+            "either side, faces clearly visible, exchanging a concerned, deeply moved look. Soft cold light, light "
+            "snowfall, mountains behind.",
+            "The rishi in white turns to his two companions; they exchange a concerned, deeply moved look, then all "
+            "three nod gravely and turn to set off up the mountain.",
+            "soft mountain wind, snow, no voices", "4"),
+    "20v": ("20", ["kf:20", "sages", "shiva"],
+            "Vertical 9:16 film frame on the snowy summit of Mount Kailash under a swirling storm sky: in the upper half "
+            "Shiva sits in padmasana meditation on a rock, eyes closed, his trishul with damru planted beside him; in "
+            "the lower foreground the three rishis kneel in the snow before him, seen from behind and the side, the "
+            "rishi in white raising an open palm toward him, pleading, the other two bowing with folded hands.",
+            "The kneeling rishi in white raises his open palm toward Shiva and then presses his hand to his heart, "
+            "pleading; the other two bow low. Shiva stays perfectly still, eyes closed. Snow streams in the wind. Slow "
+            "push-in.",
+            "storm wind, distant thunder, no voices", "4"),
+}

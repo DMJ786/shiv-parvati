@@ -48,6 +48,8 @@ PAN_HOLD = {"19", "20"}
 # Two-person shots too wide for a 9:16 crop: show this horizontal window of the 16:9 frame (fractions of the width)
 # at full width, over a blurred, darkened extension of the same shot above and below.
 FIT = {}
+# Native 9:16 clips used in place of a shot's 16:9 clip in the vertical cut: shot -> clip stem (take 1).
+VERTICAL_CLIP = {}
 
 
 def run(cmd):
@@ -345,6 +347,8 @@ def render(cuts, picks, music, info, vertical, out, master=True, card=None):
     segs = []   # (clip, first frame, frame count, dissolve in, id)
     for k, c in enumerate(cuts):
         clip = CLIPS / f"{c['id']}_t{picks[c['id']]}.mp4"
+        if vertical and c["id"] in VERTICAL_CLIP:
+            clip = CLIPS / f"{VERTICAL_CLIP[c['id']]}_t1.mp4"
         dis_in = k > 0 and cuts[k - 1]["dissolve_out"]
         n = K[k + 1] - K[k] + (PRE if dis_in else 0) + (POST if c["dissolve_out"] else 0)
         avail = int(duration(clip) * FPS) - 1
@@ -362,6 +366,8 @@ def render(cuts, picks, music, info, vertical, out, master=True, card=None):
         v = f"[{i}:v]fps={FPS},trim=start_frame={a}:end_frame={a + n},setpts=PTS-STARTPTS,"
         if sid == "card":
             v += "format=yuv420p,setsar=1,settb=AVTB"
+        elif vertical and sid in VERTICAL_CLIP:
+            v += f"scale={W}:{H}:flags=lanczos,format=yuv420p,setsar=1,settb=AVTB"
         elif vertical and sid in FIT:
             l, r = FIT[sid]
             fw = round(1920 * (r - l) / 2) * 2
