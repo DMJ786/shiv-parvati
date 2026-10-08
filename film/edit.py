@@ -42,7 +42,9 @@ IN_AT = {"19": 0.0, "20": 1.0, "24": 0.0}
 # 9:16 reframing for shots without a readable face: subject x (0-1) at the start and end of the shot.
 REFRAME = {"01": (0.45, 0.55), "09": (0.52, 0.52), "10": (0.6, 0.62), "11": (0.5, 0.5), "15": (0.26, 0.74)}
 # Story shots: 19 pans from the pointing rishi to her, 20 from the pleading rishi to Shiva, 23 holds both faces.
-REFRAME.update({"19": (0.22, 0.58), "20": (0.42, 0.72), "23": (0.55, 0.55)})
+REFRAME.update({"19": (0.2, 0.68), "20": (0.32, 0.8), "23": (0.55, 0.55)})
+# These hold on the first subject, glide across between 35% and 70% of the shot, then hold on the second.
+PAN_HOLD = {"19", "20"}
 
 
 def run(cmd):
@@ -351,7 +353,11 @@ def render(cuts, picks, music, info, vertical, out, master=True):
         elif vertical:
             x0, x1 = subject_x(clip, a / FPS, (a + n) / FPS, sid)
             cw = round(1080 * 9 / 16 / 2) * 2   # 608 px of the 1920x1080 frame
-            xexpr = f"'max(0,min(iw-{cw},({x0:.3f}+({x1 - x0:.3f})*t/{n / FPS:.4f})*iw-{cw}/2))'"
+            f = f"t/{n / FPS:.4f}"
+            if sid in PAN_HOLD:
+                p = f"clip(({f}-0.35)/0.35,0,1)"
+                f = f"({p}*{p}*(3-2*{p}))"
+            xexpr = f"'max(0,min(iw-{cw},({x0:.3f}+({x1 - x0:.3f})*{f})*iw-{cw}/2))'"
             v += f"scale=1920:1080,crop={cw}:1080:{xexpr}:0,scale={W}:{H}:flags=lanczos,format=yuv420p,setsar=1,settb=AVTB"
         else:
             v += f"scale={W}:{H}:flags=lanczos,format=yuv420p,setsar=1,settb=AVTB"
