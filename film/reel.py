@@ -48,6 +48,7 @@ TREATMENT = {
     "15": {"push": -0.08},            # slow pull-back reveal
     # Story Reel: the rishis see her and plead with Shiva (choir, beat pulses), then 21 is one real, unbroken take
     # of his eyes opening (no cut, no glow, no punch): a slow push-in to his eyes, and only slow moves after it.
+    "24": {"push": 0.07, "shake": 4},   # the five elements batter her; she stays still
     "19": {"push": 0.07, "punch": 0.08},
     "20": {"push": 0.08, "punch": 0.10},
     "21": {"push": 0.16, "point": "eyes"},

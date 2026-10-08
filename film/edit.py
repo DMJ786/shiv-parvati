@@ -20,17 +20,17 @@ MIN_SHOT, MAX_SHOT = 2.0, 4.0
 # Shots allowed to breathe past the 4 s cap, and how much of their section's time each shot should get.
 # 05 (blossoms around her tapasya, slowed to 0.75x as take 3) holds longer than 06 (the ring of fire).
 SHOT_MAX = {"05": 5.0, "21": 8.0}
-SHOT_WEIGHT = {"05": 1.6, "06": 0.75, "23": 1.4}   # 23: the blessing gets the most time after the eyes open
+SHOT_WEIGHT = {"05": 1.6, "06": 0.75, "24": 0.75, "23": 1.4}   # 23: the blessing gets the most time after the eyes open
 CARD_MIN = 5.0
 
 # Scenes: a 0.3 s dissolve only where the scene changes, hard cuts inside a scene.
 SCENES = {"01": "A", "02": "A", "03": "A", "04": "B", "05": "B", "06": "C", "07": "C", "08": "D", "09": "D",
           "10": "E", "11": "E", "12": "E", "13": "E", "14": "F", "15": "F", "card": "G",
-          "19": "D", "20": "E", "21": "E", "22": "F", "23": "F"}
+          "19": "D", "20": "E", "21": "E", "22": "F", "23": "F", "24": "C"}
 # Which music section each shot lives in (index into MUSIC_SECTIONS); 13 starts on the bell.
 SECTION_OF = {"01": 0, "02": 0, "03": 0, "04": 1, "05": 1, "06": 1, "07": 1,
               "08": 2, "09": 2, "10": 2, "11": 2, "12": 3, "13": 4, "14": 4, "15": 4,
-              "19": 2, "20": 2, "21": 3, "22": 4, "23": 4}
+              "19": 2, "20": 2, "21": 3, "22": 4, "23": 4, "24": 1}
 BELL_SHOT = "13"
 # Continuous shots that carry the bell inside them instead of cutting on it: the time (s) into the clip where
 # Shiva's eyes open. The shot is placed so that moment lands exactly on the bell, and it holds ANCHOR_HOLD s after.

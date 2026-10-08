@@ -184,13 +184,27 @@ SHOTS = {
            "Shiva gently lowers his raised palm to rest on @Element1's head in blessing; she keeps looking up into his "
            "eyes with tears of joy, hands folded; golden sunlight flares behind them and snow sparkles. Slow push-in.",
            "soft wind, a single gentle temple bell"),
+    # 24 replaces the ring of fire (06) in the Reel: the Panchabhutas, all five elements, assail her tapasya at once.
+    "24": (["parvati", "kf:06"], "Panchabhuta tapas: she sits cross-legged in deep meditation, eyes closed, hands in "
+                                 "namaste, perfectly still at the centre of a roaring ring of sacred fire on a high "
+                                 "mountain plateau, while all five elements assail her at once: a blazing white-hot "
+                                 "sun burns in the sky above, a violent storm wind whips her long hair and crimson "
+                                 "sari sideways, heavy rain lashes down and bursts into steam on the flames, the "
+                                 "rocky ground cracks open around her, lightning splits the dark clouds. Medium-wide "
+                                 "shot from a low heroic angle, her face clearly visible, calm and unmoved.",
+           "The five elements batter @Element1: the fire ring flares higher, storm wind tears at her hair and sari, "
+           "heavy rain lashes down hissing into steam on the flames, the ground cracks and trembles, lightning "
+           "flashes under the blazing sun. She does not flinch at all: eyes closed, hands in namaste, perfectly still "
+           "in meditation. Slow low-angle push-in.",
+           "roaring fire, howling wind, pounding rain hissing on flames, rumbling earth, thunder crack"),
 }
 
-# Shot order of the film (16:9 / 9:16 masters) and of the story Reel. The Reel tells the story through the rishis:
+# Shot order of the film (16:9 / 9:16 masters) and of the story Reel. In the Reel the five elements (24) replace
+# the ring of fire (06), and the story is told through the rishis:
 # they see her tapasya, climb to Kailash and plead with Shiva; his eyes open in one continuous take (21) on the
 # bell, a single tear (14), she weeps and prays, and he blesses her.
 FILM = [f"{i:02d}" for i in range(1, 16)]
-REEL_STORY = ["01", "02", "03", "04", "05", "06", "07", "08", "19", "09", "20", "21", "14", "22", "23", "15"]
+REEL_STORY = ["01", "02", "03", "04", "05", "24", "07", "08", "19", "09", "20", "21", "14", "22", "23", "15"]
 
 # Score: ~57 s, one continuous instrumental with wordless choir. (name, seconds, styles)
 # 15 shots of at most 4 s fill ~50 s of picture, so the score is 57 s: the end card rides the bansuri resolve.
