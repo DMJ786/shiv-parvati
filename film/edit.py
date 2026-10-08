@@ -224,22 +224,29 @@ def plan_cuts(info, clip_len, order=FILM):
 
 
 # ---------------------------------------------------------------- end card
-def end_card_images(bg_frame, size, dst_dir):
-    """Background (last frame, blurred and darkened) and two transparent text layers."""
+def end_card_images(bg_frame, size, dst_dir, card=None):
+    """Background (last frame, blurred and darkened) and two transparent text layers. card = {"lines", "title"}
+    sets custom text, set larger and brighter so it reads at phone size."""
     w, h = size
     bg = Image.open(bg_frame).convert("RGB")
     scale = max(w / bg.width, h / bg.height)
     bg = bg.resize((round(bg.width * scale), round(bg.height * scale)), Image.LANCZOS)
     bg = bg.crop(((bg.width - w) // 2, (bg.height - h) // 2, (bg.width - w) // 2 + w, (bg.height - h) // 2 + h))
     bg = bg.filter(ImageFilter.GaussianBlur(w / 90))
-    bg = Image.blend(bg, Image.new("RGB", (w, h), (8, 6, 10)), 0.62)
+    bg = Image.blend(bg, Image.new("RGB", (w, h), (8, 6, 10)), 0.5 if card else 0.62)
     bg.save(dst_dir / "card_bg.png")
-    gold, glow = (243, 214, 150), (255, 170, 60)
+    gold, glow = ((255, 238, 200), (255, 180, 80)) if card else ((243, 214, 150), (255, 170, 60))
     vertical = h > w
     lines = (["Same Soul.", "A Different Form.", "Always Divine."] if vertical
              else ["Same Soul. A Different Form.", "Always Divine."])
     fs = int(w * (0.062 if vertical else 0.034))
-    font = ImageFont.truetype(str(FONT_LIGHT), fs)
+    if card:
+        lines = card["lines"] if vertical else [" ".join(card["lines"])]
+        fs = int(w * (0.085 if vertical else 0.045))
+        probe = ImageDraw.Draw(Image.new("L", (1, 1)))
+        while max(probe.textlength(l, font=ImageFont.truetype(str(FONT), fs)) for l in lines) > w * 0.86:
+            fs -= 2
+    font = ImageFont.truetype(str(FONT if card else FONT_LIGHT), fs)
     big = ImageFont.truetype(str(FONT), int(fs * (0.95 if vertical else 1.25)))
 
     def layer(texts, fnt, y0, gap, name, tracking=0):
@@ -263,7 +270,7 @@ def end_card_images(bg_frame, size, dst_dir):
     top = h * (0.36 if vertical else 0.36)
     layer(lines, font, top, gap, "card_t1.png")
     rule_y = top + gap * len(lines) + fs * 0.35
-    layer(["HAR HAR MAHADEV"], big, rule_y + fs * 0.5, 0, "card_t2.png", tracking=int(fs * (0.12 if vertical else 0.18)))
+    layer([card["title"] if card else "HAR HAR MAHADEV"], big, rule_y + fs * 0.5, 0, "card_t2.png", tracking=int(fs * (0.12 if vertical else 0.18)))
     # Thin gold divider between the tagline and HAR HAR MAHADEV, drawn onto the second layer.
     t2 = Image.open(dst_dir / "card_t2.png")
     d = ImageDraw.Draw(t2)
@@ -272,17 +279,19 @@ def end_card_images(bg_frame, size, dst_dir):
     t2.save(dst_dir / "card_t2.png")
 
 
-def render_card(bg_frame, size, seconds, dst):
+def render_card(bg_frame, size, seconds, dst, card=None):
     tmp = dst.parent / (dst.stem + "_imgs")
     tmp.mkdir(exist_ok=True)
-    end_card_images(bg_frame, size, tmp)
+    end_card_images(bg_frame, size, tmp, card)
     w, h = size
+    # A custom card comes in faster and holds longer, so both lines are on screen together for most of it.
+    (s1, d1), (s2, d2), out = ((0.25, 0.8), (1.0, 0.8), 0.7) if card else ((0.5, 1.4), (2.0, 1.4), 1.0)
     fc = (f"[0:v]scale={int(w * 1.06)}:-2,zoompan=z='min(1.06,1+0.0006*on)':d=1:s={w}x{h}:fps={FPS},"
           f"format=yuv420p[bg];"
-          f"[1:v]format=rgba,fade=t=in:st=0.5:d=1.4:alpha=1[t1];"
-          f"[2:v]format=rgba,fade=t=in:st=2.0:d=1.4:alpha=1[t2];"
+          f"[1:v]format=rgba,fade=t=in:st={s1}:d={d1}:alpha=1[t1];"
+          f"[2:v]format=rgba,fade=t=in:st={s2}:d={d2}:alpha=1[t2];"
           f"[bg][t1]overlay=0:0:format=auto[b1];[b1][t2]overlay=0:0:format=auto,"
-          f"fade=t=out:st={seconds - 1.0:.2f}:d=1.0,format=yuv420p,setsar=1[v]")
+          f"fade=t=out:st={seconds - out:.2f}:d={out},format=yuv420p,setsar=1[v]")
     run(["ffmpeg", "-v", "error", "-y", "-loop", "1", "-framerate", FPS, "-t", f"{seconds:.3f}", "-i", tmp / "card_bg.png",
          "-loop", "1", "-framerate", FPS, "-t", f"{seconds:.3f}", "-i", tmp / "card_t1.png",
          "-loop", "1", "-framerate", FPS, "-t", f"{seconds:.3f}", "-i", tmp / "card_t2.png",
@@ -317,7 +326,7 @@ GRADE = ("colorbalance=rs=-0.07:gs=-0.01:bs=0.08:rm=0.02:gm=0.0:bm=-0.03:rh=0.07
 GRAIN = "noise=c0s=6:c0f=t+u"
 
 
-def render(cuts, picks, music, info, vertical, out, master=True):
+def render(cuts, picks, music, info, vertical, out, master=True, card=None):
     BUILD.mkdir(exist_ok=True)
     W, H = (1080, 1920) if vertical else (1920, 1080)
     # Everything below is in whole frames so every cut lands exactly on its planned (beat) frame.
@@ -327,7 +336,7 @@ def render(cuts, picks, music, info, vertical, out, master=True):
     last = CLIPS / f"{cuts[-1]['id']}_t{picks[cuts[-1]['id']]}.mp4"
     bg = BUILD / "card_src.png"
     run(["ffmpeg", "-v", "error", "-y", "-sseof", "-0.3", "-i", last, "-frames:v", "1", bg])
-    card = render_card(bg, (W, H), card_frames / FPS, BUILD / f"card_{'v' if vertical else 'h'}.mp4")
+    card = render_card(bg, (W, H), card_frames / FPS, BUILD / f"card_{'v' if vertical else 'h'}.mp4", card)
 
     inputs, vf, af = [], [], []
     segs = []   # (clip, first frame, frame count, dissolve in, id)

@@ -112,7 +112,7 @@ def continuity(src, cuts, into="13"):
     return {"before": out[0], "after": out[1]}
 
 
-def camera(cuts, beats, bell, pts, cont=None):
+def camera(cuts, beats, bell, pts, cont=None, treatment=None, pulses=True):
     """Per-frame (zoom, cx, cy, flash, shake_px, glow) for the whole film, keyed to the cut plan."""
     n = round(cuts[-1]["end"] * FPS) + 400
     z = np.ones(n)
@@ -120,7 +120,7 @@ def camera(cuts, beats, bell, pts, cont=None):
     flash, shake, glow = np.zeros(n), np.zeros(n), np.zeros(n)
     prev_end_z, prev_centre = 1.0, (0.5, 0.5)
     for k, c in enumerate(cuts):
-        sid, tr = c["id"], TREATMENT.get(c["id"], {})
+        sid, tr = c["id"], (treatment or TREATMENT).get(c["id"], {})
         a, b = round(c["start"] * FPS), round(c["end"] * FPS)
         dis_in = k > 0 and cuts[k - 1]["dissolve_out"]
         z0 = max(prev_end_z, 1.0 + max(0.0, -tr.get("push", 0))) if dis_in else 1.0 + max(0.0, -tr.get("push", 0))
@@ -166,8 +166,9 @@ def camera(cuts, beats, bell, pts, cont=None):
                     arr[i] = arr[lo - 1] * (1 - w) + arr[hi] * w
     # Beat pulses under the choir only (from the rishis on). From Shiva's close-up on, the ending stays calm.
     ids = [c["id"] for c in cuts]
-    pulse_from = cuts[ids.index("08")]["start"]
-    pulse_until = next(c["start"] for c in cuts if c["id"] in CALM_FROM)
+    pulses = pulses and "08" in ids
+    pulse_from = cuts[ids.index("08")]["start"] if pulses else 0.0
+    pulse_until = next(c["start"] for c in cuts if c["id"] in CALM_FROM) if pulses else 0.0
     for j, bt in enumerate(beats):
         if pulse_from <= bt < pulse_until and j % 2 == 0:
             amp = 0.022
@@ -391,7 +392,7 @@ def render(out, src=None, timeline=None):
     return out
 
 
-def render_vertical(out, src=None, timeline=None, src16=None):
+def render_vertical(out, src=None, timeline=None, src16=None, treatment=None, pulses=True):
     """Native 9:16 Reel: the face-tracked vertical cut (with its vertical end card) plus the same camera treatment
     as the rotated Reel — push-ins, impact zooms, choir beat pulses, punch-in close-ups, flash + shake on the bell —
     and a calm ending after Shiva's eyes open. No hook, no rotate prompt."""
@@ -405,7 +406,8 @@ def render_vertical(out, src=None, timeline=None, src16=None):
         p["centre"] = (0.5, p["centre"][1])
         p["eyes"] = (0.5, p["eyes"][1])
     match = any(c["id"] == "13" for c in cuts)
-    z, cx, cy, flash, shake, glow = camera(cuts, info["beats"], bell, pts, cont=continuity(src, cuts) if match else None)
+    z, cx, cy, flash, shake, glow = camera(cuts, info["beats"], bell, pts, cont=continuity(src, cuts) if match else None,
+                                           treatment=treatment, pulses=pulses)
     rng = np.random.default_rng(7)
     n = round(edit.duration(src) * FPS)
     video = BUILD / "vertical_video.mp4"
