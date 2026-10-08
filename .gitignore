@@ -10,3 +10,7 @@ build/
 __pycache__/
 .env
 sati/
+rescue/keyframes/
+rescue/clips/
+rescue/music/
+rescue/build/
