@@ -391,20 +391,21 @@ def render(out, src=None, timeline=None):
     return out
 
 
-def render_vertical(out, src=None):
+def render_vertical(out, src=None, timeline=None, src16=None):
     """Native 9:16 Reel: the face-tracked vertical cut (with its vertical end card) plus the same camera treatment
     as the rotated Reel — push-ins, impact zooms, choir beat pulses, punch-in close-ups, flash + shake on the bell —
     and a calm ending after Shiva's eyes open. No hook, no rotate prompt."""
-    tl = json.loads((BUILD / "timeline.json").read_text())
+    tl = json.loads((timeline or BUILD / "timeline.json").read_text())
     cuts, bell = tl["cuts"], tl["bell"]
-    src16 = BUILD / "shiv_parvati_16x9_premaster.mov"
+    src16 = src16 or BUILD / "shiv_parvati_16x9_premaster.mov"
     src = src or BUILD / "shiv_parvati_9x16_premaster.mov"
     info = edit.analyse(ROOT / "music" / tl["music"])
     pts = subject_points(src16, cuts)            # vertical positions carry over: the 9:16 cut keeps full height
     for p in pts.values():                       # the vertical cut is already centred on the subject horizontally
         p["centre"] = (0.5, p["centre"][1])
         p["eyes"] = (0.5, p["eyes"][1])
-    z, cx, cy, flash, shake, glow = camera(cuts, info["beats"], bell, pts, cont=continuity(src, cuts))
+    match = any(c["id"] == "13" for c in cuts)
+    z, cx, cy, flash, shake, glow = camera(cuts, info["beats"], bell, pts, cont=continuity(src, cuts) if match else None)
     rng = np.random.default_rng(7)
     n = round(edit.duration(src) * FPS)
     video = BUILD / "vertical_video.mp4"

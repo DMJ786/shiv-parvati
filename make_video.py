@@ -9,7 +9,7 @@ Shiv & Parvati — ~55 s cinematic AI film, built in stages on fal.ai.
   python make_video.py video --shots 01 --takes 1   animate keyframes (Kling v3 Pro) -> clips/NN_tK.mp4
   python make_video.py music        2-3 versions of the ~60 s score (Eleven Music) -> music/
   python make_video.py edit --music A   beat-cut, grade, end card, mix, master -> shiv_parvati_16x9.mp4 / _9x16.mp4
-  python make_video.py vertical     native 9:16 Insta Reel with the same camera treatment -> shiv_parvati_insta_vertical.mp4
+  python make_video.py vertical     native 9:16 Insta story Reel with the same camera treatment -> shiv_parvati_insta_vertical.mp4
   python make_video.py reel         "rotate your phone" story Reel (prompt + rotated story cut) -> shiv_parvati_reel.mp4
 
 Every stage is resumable: finished files are skipped. Delete a file (or pass --redo 03,07) to regenerate it.
@@ -389,6 +389,26 @@ def make_edit(version, formats=("16x9", "9x16"), dip=True):
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
 
 
+def story_cut():
+    """Cut plan, picks, flowing score and timeline file of the Reels' story order."""
+    from film import edit
+    from film.shots import REEL_STORY
+    tl = json.loads((edit.BUILD / "timeline.json").read_text())
+    music = MUSIC / tl["music"]
+    info = edit.analyse(music)
+    picks = load_picks()
+    clip_len = {sid: edit.duration(CLIPS / f"{sid}_t{picks[sid]}.mp4") for sid in REEL_STORY}
+    cuts = edit.plan_cuts(info, clip_len, order=REEL_STORY)
+    timeline = edit.BUILD / "timeline_reel.json"
+    timeline.write_text(json.dumps({"music": music.name, "picks": picks, "tempo": info["tempo"], "bell": info["bell"],
+                                    "cuts": cuts}, indent=1))
+    for c in cuts:
+        print(f"  {c['id']}  {c['start']:6.2f} -> {c['end']:6.2f}  ({c['end'] - c['start']:.2f}s)"
+              f"{'  dissolve' if c['dissolve_out'] else ''}")
+    score = edit.prepare_score(music, info, edit.BUILD / "score_reel_flow.wav", dip=False)
+    return cuts, picks, score, info, timeline
+
+
 # ---------------------------------------------------------------- cli
 def main():
     global CLIP_SECONDS
@@ -422,39 +442,19 @@ def main():
         make_music([x for x in a.versions.split(",") if x])
     elif a.stage == "edit":
         make_edit(a.music, tuple(a.formats.split(",")), dip=not a.no_dip)
-    elif a.stage == "vertical":
+    elif a.stage in ("reel", "vertical"):
         from film import edit, reel
-        # Like the rotate Reel: music flows through Shiva's eyes opening (no silent dip), rendered into build/ only.
-        tl = json.loads((edit.BUILD / "timeline.json").read_text())
-        music = MUSIC / tl["music"]
-        info = edit.analyse(music)
-        score = edit.prepare_score(music, info, edit.BUILD / "score_reel_flow.wav", dip=False)
-        film = edit.render(tl["cuts"], {k: int(v) for k, v in tl["picks"].items()}, score, info, True,
-                           edit.BUILD / "vertical_film_9x16.mp4", master=False)
-        out = reel.render_vertical(ROOT / "shiv_parvati_insta_vertical.mp4", src=film)
-        lufs, tp = edit.loudness(out)
-        print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
-    elif a.stage == "reel":
-        from film import edit, reel
-        from film.shots import REEL_STORY
-        # The Reel tells its own story (REEL_STORY: the rishis see her, plead with Shiva, his eyes open in one
-        # continuous take, she prays, he blesses her) on the film's score, with the music flowing through the eyes
-        # opening (no silent dip, no heartbeats). Rendered into build/ only, so the film masters stay as they are.
-        tl = json.loads((edit.BUILD / "timeline.json").read_text())
-        music = MUSIC / tl["music"]
-        info = edit.analyse(music)
-        picks = load_picks()
-        clip_len = {sid: edit.duration(CLIPS / f"{sid}_t{picks[sid]}.mp4") for sid in REEL_STORY}
-        cuts = edit.plan_cuts(info, clip_len, order=REEL_STORY)
-        timeline = edit.BUILD / "timeline_reel.json"
-        timeline.write_text(json.dumps({"music": music.name, "picks": picks, "tempo": info["tempo"],
-                                        "bell": info["bell"], "cuts": cuts}, indent=1))
-        for c in cuts:
-            print(f"  {c['id']}  {c['start']:6.2f} -> {c['end']:6.2f}  ({c['end'] - c['start']:.2f}s)"
-                  f"{'  dissolve' if c['dissolve_out'] else ''}")
-        score = edit.prepare_score(music, info, edit.BUILD / "score_reel_flow.wav", dip=False)
-        film = edit.render(cuts, picks, score, info, False, edit.BUILD / "reel_film_16x9.mp4", master=False)
-        out = reel.render(ROOT / "shiv_parvati_reel.mp4", src=film, timeline=timeline)
+        # Both Reels tell the story cut (REEL_STORY: the five elements assail her, the rishis see her and plead with
+        # Shiva, his eyes open in one continuous take, she prays, he blesses her) on the film's score, with the music
+        # flowing through the eyes opening (no silent dip, no heartbeats). The film masters stay as they are.
+        cuts, picks, score, info, timeline = story_cut()
+        film16 = edit.render(cuts, picks, score, info, False, edit.BUILD / "reel_film_16x9.mp4", master=False)
+        if a.stage == "reel":
+            out = reel.render(ROOT / "shiv_parvati_reel.mp4", src=film16, timeline=timeline)
+        else:
+            film9 = edit.render(cuts, picks, score, info, True, edit.BUILD / "vertical_film_9x16.mp4", master=False)
+            out = reel.render_vertical(ROOT / "shiv_parvati_insta_vertical.mp4", src=film9, timeline=timeline,
+                                       src16=film16)
         lufs, tp = edit.loudness(out)
         print(f"{out.name}: {edit.duration(out):.2f}s, {out.stat().st_size / 1e6:.1f} MB, {lufs:.1f} LUFS, {tp:.1f} dBTP")
 

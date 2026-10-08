@@ -41,6 +41,8 @@ ANCHOR_HOLD = 2.8
 IN_AT = {"19": 0.0, "20": 1.0, "24": 0.0}
 # 9:16 reframing for shots without a readable face: subject x (0-1) at the start and end of the shot.
 REFRAME = {"01": (0.45, 0.55), "09": (0.52, 0.52), "10": (0.6, 0.62), "11": (0.5, 0.5), "15": (0.26, 0.74)}
+# Story shots: 19 pans from the pointing rishi to her, 20 from the pleading rishi to Shiva, 23 holds both faces.
+REFRAME.update({"19": (0.22, 0.58), "20": (0.42, 0.72), "23": (0.55, 0.55)})
 
 
 def run(cmd):
