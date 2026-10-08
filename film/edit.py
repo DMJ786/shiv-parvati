@@ -34,8 +34,11 @@ SECTION_OF = {"01": 0, "02": 0, "03": 0, "04": 1, "05": 1, "06": 1, "07": 1,
 BELL_SHOT = "13"
 # Continuous shots that carry the bell inside them instead of cutting on it: the time (s) into the clip where
 # Shiva's eyes open. The shot is placed so that moment lands exactly on the bell, and it holds ANCHOR_HOLD s after.
-EYES_OPEN = {"21": 4.0}
+EYES_OPEN = {"21": 4.8}
 ANCHOR_HOLD = 2.8
+# Where in its clip a shot's used part sits (0 = from the start, 1 = up to the end; default 0.35):
+# 19 opens on the rishi pointing toward Kailash, 20 ends on his gesture back to the valley.
+IN_AT = {"19": 0.0, "20": 1.0}
 # 9:16 reframing for shots without a readable face: subject x (0-1) at the start and end of the shot.
 REFRAME = {"01": (0.45, 0.55), "09": (0.52, 0.52), "10": (0.6, 0.62), "11": (0.5, 0.5), "15": (0.26, 0.74)}
 
@@ -334,7 +337,7 @@ def render(cuts, picks, music, info, vertical, out, master=True):
         if c["id"] in EYES_OPEN:
             a = round((EYES_OPEN[c["id"]] - (info["bell"] - c["start"])) * FPS) - (PRE if dis_in else 0)
         else:
-            a = 0 if c["id"] == "13" else max(0, min(int((avail - n) * 0.35), avail - n))
+            a = 0 if c["id"] == "13" else max(0, min(int((avail - n) * IN_AT.get(c["id"], 0.35)), avail - n))
         segs.append((clip, a, n, dis_in, c["id"]))
     segs.append((card, 0, card_frames, True, "card"))
 
