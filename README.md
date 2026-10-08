@@ -18,9 +18,12 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
 - `shiv_parvati_sati_reel.mp4` — episode 2, "Sati to Parvati": a 45 s native 9:16 story reel (7 new vertical
   shots + 7 re-cropped from the first film), beat-cut, grief drop in the score, bell hard cut into Shiva's eyes
   (`python make_sati.py keyframes|video|music|edit`, `film/sati.py`, `film/sati_edit.py`)
-- Episode 3, "The Rescue" (in progress): a climber falls on a Himalayan ridge, cries out to Shiva and he catches
-  her; 16 shots, 42 s, from the approved character sheet and storyboards in `rescue/references/`
-  (`python make_rescue.py keyframes`, `film/rescue.py`)
+- `shiv_rescue_16x9.mp4` / `shiv_rescue_9x16.mp4` — episode 3, "The Rescue" (48 s): a climber falls on a Himalayan
+  ridge, cries out to Shiva and he catches her. Built from the approved character sheet and storyboards in
+  `rescue/references/`, re-directed into 18 shots (FPV opening, top-down vertigo fall, golden light on the bell,
+  slow-motion reach and catch on the climax, blessing, distant-silhouette ending); shot 16 is a camera move over its
+  keyframe until its clip is generated (`python make_rescue.py keyframes|video|music|edit`, `film/rescue.py`,
+  `film/rescue_edit.py`)
 
 ## Pipeline
 
