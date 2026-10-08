@@ -18,6 +18,15 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
   (Panchabhuta trial, the rishis see her and plead with Shiva, continuous eyes opening on the bell, her tear, prayer
   and blessing), face-tracked into 9:16, with hold-glide-hold pans on the wide rishi shots (19: the pointing rishi to
   her, 20: the pleading rishi to Shiva) and the same camera treatment (`python make_video.py vertical`)
+- `shiv_parvati_devotion_9x16.mp4` / `shiv_parvati_devotion_16x9.mp4` — the devotion cut (46.5 s), one clear journey
+  without captions: her face and the Himalayas; one locked-off shot through winter, spring, summer (the ring of
+  fire and blazing sun), monsoon (storm wind, rain, lightning) and autumn, made from keyframe 05 and four edits of
+  that exact frame joined by Kling start/end-frame transitions; the rishis see her, exchange a concerned look and
+  plead with Shiva; Shiva still, then his eyes open gently in one take on the bell after a brief dip in the score;
+  her recognition, a wide blessing (his face, his hand on her head, her prayer), her tears of relief; sunrise and
+  the end card "Through every season, her devotion remained." / "HAR HAR MAHADEV". New score cut to the story,
+  cuts placed for the emotion rather than the beat, slow push-ins only (`python make_devotion.py
+  keyframes|video|music|edit`, `film/devotion.py`)
 - `shiv_parvati_reel_cover.jpg` — 1080×1920 cover image for the Reel
 - `shiv_parvati_sati_reel.mp4` — episode 2, "Sati to Parvati": a 45 s native 9:16 story reel (7 new vertical
   shots + 7 re-cropped from the first film), beat-cut, grief drop in the score, bell hard cut into Shiva's eyes
