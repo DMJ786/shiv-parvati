@@ -110,7 +110,7 @@ TREATMENT = {      # camera on the 9:16 cut: slow, deliberate moves only; nothin
     "20": {"push": 0.05}, "11": {"push": 0.05}, "21": {"push": 0.12, "point": "eyes"}, "14": {"push": 0.05},
     "26": {"push": 0.035}, "22": {"push": 0.05}, "15": {"push": -0.06},
 }
-IN_AT = {"30": 0.5, "25": 0.3}
-REFRAME = {"30": (0.52, 0.52), "25": (0.5, 0.5), "26": (0.515, 0.515), "11": (0.5, 0.5)}
+IN_AT = {"30": 0.5, "25": 0.5}
+REFRAME = {"30": (0.52, 0.52), "25": (0.5, 0.5), "26": (0.52, 0.55), "11": (0.5, 0.5)}
 CARD_LINES = ["Through every season,", "her devotion remained."]
 CARD_TITLE = "HAR HAR MAHADEV"
