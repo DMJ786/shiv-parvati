@@ -170,12 +170,16 @@ SHOTS = {
            "@Element1 weeps as tears roll down her cheeks; she lifts her folded hands to her forehead in prayer and "
            "looks up to the heavens, lips trembling. Warm sunrise light grows on her face. Slow push-in.",
            "soft wind, a trembling breath"),
-    "23": (["shiva", "parvati"], "Golden sunrise on a snowy Himalayan ledge: Shiva stands before her, tall and serene, "
-                                 "eyes open with a gentle compassionate smile, his right palm raised over her head in "
-                                 "blessing, the trishul with damru in his left hand; she kneels before him in her "
-                                 "crimson sari with hands folded in prayer, her tear-streaked face lifted toward him "
-                                 "in devotion. Medium-wide side angle, both faces clearly visible, warm golden light, "
-                                 "snow sparkling, peaks and a sea of clouds behind.",
+    # 23: her face large in the foreground (a two-shot with her small in profile drifts off her face), with
+    # her tearful close-up (22) as an extra reference.
+    "23": (["parvati", "kf:22", "shiva"], "Golden sunrise on a snowy Himalayan ledge. Medium shot: in the right "
+                                          "foreground she kneels in her crimson sari, body and face turned three-"
+                                          "quarters toward camera, her face large and clearly visible, tear-streaked, "
+                                          "eyes lifted upward in devotion, hands folded in prayer at her chest. Behind "
+                                          "her on the left stands Shiva, tall and serene with a gentle compassionate "
+                                          "smile, his right palm raised just above her head in blessing, the trishul "
+                                          "with damru in his left hand. Warm golden backlight, snow sparkling, a sea "
+                                          "of clouds and peaks behind.",
            "Shiva gently lowers his raised palm to rest on @Element1's head in blessing; she closes her eyes with "
            "tears of joy, hands folded; golden sunlight flares behind them and snow sparkles. Slow push-in.",
            "soft wind, a single gentle temple bell"),
