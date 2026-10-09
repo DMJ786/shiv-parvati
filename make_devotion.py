@@ -285,6 +285,7 @@ def make_edit(version, formats=("9x16", "16x9")):
     edit.REFRAME.update(dv.REFRAME)
     edit.IN_AT.update(dv.IN_AT)
     edit.FIT.update(dv.FIT)
+    edit.VERTICAL_IN_AT.update(dv.VERTICAL_IN_AT)
     edit.VERTICAL_CLIP.update({shot: vid for vid, (shot, *_) in dv.VERTICAL.items() if (CLIPS / f"{vid}_t1.mp4").exists()})
     length = edit.duration(music)
     y, sr = librosa.load(str(music), sr=22050, mono=True)

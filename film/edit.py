@@ -50,6 +50,7 @@ PAN_HOLD = {"19", "20"}
 FIT = {}
 # Native 9:16 clips used in place of a shot's 16:9 clip in the vertical cut: shot -> clip stem (take 1).
 VERTICAL_CLIP = {}
+VERTICAL_IN_AT = {}     # in-points (as IN_AT) for those vertical clips
 
 
 def run(cmd):
@@ -357,7 +358,8 @@ def render(cuts, picks, music, info, vertical, out, master=True, card=None):
         if c["id"] in EYES_OPEN:
             a = round((EYES_OPEN[c["id"]] - (info["bell"] - c["start"])) * FPS) - (PRE if dis_in else 0)
         else:
-            a = 0 if c["id"] == "13" else max(0, min(int((avail - n) * IN_AT.get(c["id"], 0.35)), avail - n))
+            at = (VERTICAL_IN_AT if vertical and c["id"] in VERTICAL_CLIP else IN_AT).get(c["id"], 0.35)
+            a = 0 if c["id"] == "13" else max(0, min(int((avail - n) * at), avail - n))
         segs.append((clip, a, n, dis_in, c["id"]))
     segs.append((card, 0, card_frames, True, "card"))
 

@@ -146,3 +146,4 @@ VERTICAL = {
             "push-in.",
             "storm wind, distant thunder, no voices", "4"),
 }
+VERTICAL_IN_AT = {"19": 0.0, "25": 0.5, "20": 0.0}   # 20v: the rishi's raised palm comes at the start of the take
