@@ -25,7 +25,8 @@ A ~57 s epic Indian-mythological short, built stage by stage on fal.ai and finis
   plead with Shiva; Shiva still, then his eyes open gently in one take on the bell after a brief dip in the score;
   her recognition, a wide blessing (his face, his hand on her head, her prayer), her tears of relief; sunrise and
   the end card "Through every season, her devotion remained." / "HAR HAR MAHADEV". New score cut to the story,
-  cuts placed for the emotion rather than the beat, slow push-ins only (`python make_devotion.py
+  cuts placed for the emotion rather than the beat, slow push-ins only; the 9:16 cut uses native vertical
+  versions of the three rishi shots (19v, 25v, 20v) (`python make_devotion.py
   keyframes|video|music|edit`, `film/devotion.py`)
 - `shiv_parvati_reel_cover.jpg` — 1080×1920 cover image for the Reel
 - `shiv_parvati_sati_reel.mp4` — episode 2, "Sati to Parvati": a 45 s native 9:16 story reel (7 new vertical
